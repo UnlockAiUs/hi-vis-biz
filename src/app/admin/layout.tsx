@@ -30,7 +30,10 @@ export default async function AdminLayout({
     return <>{children}</>
   }
 
-  const orgName = (membership.organizations as { name: string })?.name || 'Organization'
+  const organizations = membership.organizations as { name: string } | { name: string }[] | null
+  const orgName = Array.isArray(organizations) 
+    ? organizations[0]?.name 
+    : organizations?.name || 'Organization'
 
   return (
     <div className="min-h-screen bg-gray-100">
