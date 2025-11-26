@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -9,8 +9,54 @@ export default function SetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [checking, setChecking] = useState(true)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    // Check for session or handle hash fragments from Supabase
+    const checkSession = async () => {
+      try {
+        // First, try to get the session from URL hash (Supabase sometimes sends tokens in hash)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+        
+        if (accessToken && refreshToken) {
+          // Set the session from URL hash
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          if (sessionError) {
+            console.error('Error setting session from hash:', sessionError)
+          }
+          // Clear the hash from URL
+          window.history.replaceState(null, '', window.location.pathname)
+        }
+        
+        // Now check if we have a valid session
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        
+        if (userError || !user) {
+          console.error('No user session found:', userError?.message)
+          setError('Your session has expired or is invalid. Please request a new invite.')
+          setChecking(false)
+          return
+        }
+        
+        setUserEmail(user.email || null)
+        setChecking(false)
+      } catch (err) {
+        console.error('Session check error:', err)
+        setError('An error occurred while verifying your session.')
+        setChecking(false)
+      }
+    }
+    
+    checkSession()
+  }, [supabase.auth])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,6 +74,14 @@ export default function SetPasswordPage() {
 
     setLoading(true)
 
+    // Double-check we have a session before updating
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setError('Session expired. Please request a new invite from your administrator.')
+      setLoading(false)
+      return
+    }
+
     const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
@@ -36,8 +90,25 @@ export default function SetPasswordPage() {
       return
     }
 
-    // Password set successfully, redirect to onboarding
-    router.push('/onboarding')
+    // Update member status to active
+    await supabase
+      .from('organization_members')
+      .update({ status: 'active' })
+      .eq('user_id', user.id)
+
+    // Password set successfully, redirect to dashboard
+    router.push('/dashboard')
+  }
+
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Verifying your invitation...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -48,7 +119,11 @@ export default function SetPasswordPage() {
             Set Your Password
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Welcome! Please create a password for your account.
+            {userEmail ? (
+              <>Welcome <strong>{userEmail}</strong>! Please create a password for your account.</>
+            ) : (
+              'Welcome! Please create a password for your account.'
+            )}
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
