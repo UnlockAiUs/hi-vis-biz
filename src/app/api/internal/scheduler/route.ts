@@ -71,9 +71,10 @@ export async function POST(request: Request) {
           }
         }
         
-        // Get profile
-        const userProfiles = member.user_profiles as { profile_json: ProfileJson } | null
-        const profile = userProfiles?.profile_json || null
+        // Get profile - user_profiles is an array from the join
+        const userProfilesArray = member.user_profiles as { profile_json: ProfileJson }[] | null
+        const userProfile = userProfilesArray && userProfilesArray.length > 0 ? userProfilesArray[0] : null
+        const profile = userProfile?.profile_json || null
         
         // Build scheduling context
         const context: UserSchedulingContext = {
