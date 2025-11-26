@@ -129,36 +129,60 @@ export type Database = {
         Row: {
           id: string
           org_id: string
-          user_id: string
+          user_id: string | null  // Nullable for pre-invite members
           role: 'owner' | 'admin' | 'member'
           level: 'exec' | 'manager' | 'ic' | null
           department_id: string | null
           supervisor_user_id: string | null
           status: 'invited' | 'active' | 'inactive'
+          // Enhanced onboarding fields (migration 009)
+          display_name: string | null
+          job_title: string | null
+          has_direct_reports: boolean
+          can_view_reports: boolean
+          invite_status: 'pending' | 'sent' | 'accepted'
+          invite_sent_at: string | null
+          invited_email: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           org_id: string
-          user_id: string
+          user_id?: string | null  // Nullable for pre-invite members
           role?: 'owner' | 'admin' | 'member'
           level?: 'exec' | 'manager' | 'ic' | null
           department_id?: string | null
           supervisor_user_id?: string | null
           status?: 'invited' | 'active' | 'inactive'
+          // Enhanced onboarding fields (migration 009)
+          display_name?: string | null
+          job_title?: string | null
+          has_direct_reports?: boolean
+          can_view_reports?: boolean
+          invite_status?: 'pending' | 'sent' | 'accepted'
+          invite_sent_at?: string | null
+          invited_email?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           org_id?: string
-          user_id?: string
+          user_id?: string | null
           role?: 'owner' | 'admin' | 'member'
           level?: 'exec' | 'manager' | 'ic' | null
           department_id?: string | null
           supervisor_user_id?: string | null
           status?: 'invited' | 'active' | 'inactive'
+          // Enhanced onboarding fields (migration 009)
+          display_name?: string | null
+          job_title?: string | null
+          has_direct_reports?: boolean
+          can_view_reports?: boolean
+          invite_status?: 'pending' | 'sent' | 'accepted'
+          invite_sent_at?: string | null
+          invited_email?: string | null
           created_at?: string
           updated_at?: string
         }
