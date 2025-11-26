@@ -102,7 +102,9 @@ export async function POST(
   // Build agent context
   const profileJson = userProfile?.profile_json as ProfileJson | undefined
   const userName = profileJson?.role_summary?.split(' ')[0] || user.email?.split('@')[0] || 'there'
-  const department = membership?.departments as { name: string } | null
+  // departments is an array from the join
+  const departmentsArray = membership?.departments as { name: string }[] | null
+  const department = departmentsArray && departmentsArray.length > 0 ? departmentsArray[0] : null
   
   const agentContext: AgentContext = {
     userId: user.id,
