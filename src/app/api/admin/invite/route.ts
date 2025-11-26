@@ -36,8 +36,9 @@ export async function POST(request: NextRequest) {
     const serviceClient = await createServiceClient()
 
     // Invite user via Supabase Auth
+    // Include type=invite in the redirect URL so callback knows to redirect to set-password
     const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://hi-vis-biz.vercel.app'}/auth/callback?next=/onboarding`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://hi-vis-biz.vercel.app'}/auth/callback?type=invite&next=/onboarding`,
     })
 
     if (inviteError) {

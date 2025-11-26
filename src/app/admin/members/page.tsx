@@ -13,6 +13,7 @@ export default function MembersPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [orgId, setOrgId] = useState<string | null>(null)
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
   
   // Add member form
   const [showAddForm, setShowAddForm] = useState(false)
@@ -36,6 +37,12 @@ export default function MembersPage() {
   // Delete confirmation state
   const [deletingMember, setDeletingMember] = useState<MemberWithEmail | null>(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+
+  // Role change state
+  const [changingRole, setChangingRole] = useState<MemberWithEmail | null>(null)
+  const [newRole, setNewRole] = useState<'owner' | 'admin' | 'member'>('member')
+  const [changingRoleLoading, setChangingRoleLoading] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -55,7 +62,7 @@ export default function MembersPage() {
 
       const { data: membership } = await supabase
         .from('organization_members')
-        .select('org_id')
+        .select('org_id, role')
         .eq('user_id', user.id)
         .in('role', ['owner', 'admin'])
         .single()
@@ -63,6 +70,7 @@ export default function MembersPage() {
       if (!membership) throw new Error('Not an admin')
       
       setOrgId(membership.org_id)
+      setCurrentUserRole(membership.role)
 
       const { data: membersData, error: membersError } = await supabase
         .from('organization_members')
@@ -206,14 +214,22 @@ export default function MembersPage() {
   const confirmDelete = async () => {
     if (!deletingMember || deleteConfirmText !== 'DeleteForever') return
 
-    try {
-      // Delete the member
-      const { error: deleteError } = await supabase
-        .from('organization_members')
-        .delete()
-        .eq('id', deletingMember.id)
+    setDeleting(true)
+    setError(null)
 
-      if (deleteError) throw deleteError
+    try {
+      // Use API route to bypass RLS
+      const response = await fetch('/api/admin/members', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId: deletingMember.id }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete member')
+      }
 
       setMembers(members.filter(m => m.id !== deletingMember.id))
       setDeletingMember(null)
@@ -222,6 +238,40 @@ export default function MembersPage() {
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete member')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const changeRole = async () => {
+    if (!changingRole || !newRole) return
+
+    setChangingRoleLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/admin/members', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId: changingRole.id, role: newRole }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to change role')
+      }
+
+      setMembers(members.map(m => 
+        m.id === changingRole.id ? { ...m, role: newRole } : m
+      ))
+      setChangingRole(null)
+      setSuccess(`Role changed to ${newRole} successfully`)
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to change role')
+    } finally {
+      setChangingRoleLoading(false)
     }
   }
 
@@ -491,6 +541,14 @@ export default function MembersPage() {
                           >
                             Edit
                           </button>
+                          {currentUserRole === 'owner' && (
+                            <button
+                              onClick={() => { setChangingRole(member); setNewRole(member.role as 'admin' | 'member'); }}
+                              className="text-purple-600 hover:text-purple-900"
+                            >
+                              Change Role
+                            </button>
+                          )}
                           {member.status === 'active' ? (
                             <button
                               onClick={() => updateMemberStatus(member.id, 'inactive')}
@@ -557,6 +615,16 @@ export default function MembersPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
+                      {currentUserRole === 'owner' && (
+                        <button
+                          onClick={() => { setChangingRole(member); setNewRole(member.role as 'admin' | 'member'); }}
+                          className="p-2 text-purple-600 hover:bg-purple-50 rounded"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                        </button>
+                      )}
                       <button
                         onClick={() => setDeletingMember(member)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded"
@@ -683,10 +751,81 @@ export default function MembersPage() {
               </button>
               <button
                 onClick={confirmDelete}
-                disabled={deleteConfirmText !== 'DeleteForever'}
+                disabled={deleteConfirmText !== 'DeleteForever' || deleting}
                 className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Delete Forever
+                {deleting ? 'Deleting...' : 'Delete Forever'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Role Modal */}
+      {changingRole && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Change Member Role</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Select a new role for this member. Owners have full control, admins can manage members, and members have basic access.
+            </p>
+            <div className="space-y-3 mb-6">
+              <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="role"
+                  value="member"
+                  checked={newRole === 'member'}
+                  onChange={() => setNewRole('member')}
+                  className="h-4 w-4 text-blue-600"
+                />
+                <div className="ml-3">
+                  <span className="block text-sm font-medium text-gray-900">Member</span>
+                  <span className="block text-xs text-gray-500">Basic access to the organization</span>
+                </div>
+              </label>
+              <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="role"
+                  value="admin"
+                  checked={newRole === 'admin'}
+                  onChange={() => setNewRole('admin')}
+                  className="h-4 w-4 text-blue-600"
+                />
+                <div className="ml-3">
+                  <span className="block text-sm font-medium text-gray-900">Admin</span>
+                  <span className="block text-xs text-gray-500">Can manage members and departments</span>
+                </div>
+              </label>
+              <label className="flex items-center p-3 border border-purple-200 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100">
+                <input
+                  type="radio"
+                  name="role"
+                  value="owner"
+                  checked={newRole === 'owner'}
+                  onChange={() => setNewRole('owner')}
+                  className="h-4 w-4 text-purple-600"
+                />
+                <div className="ml-3">
+                  <span className="block text-sm font-medium text-purple-900">Owner</span>
+                  <span className="block text-xs text-purple-700">Full control. You will be demoted to admin.</span>
+                </div>
+              </label>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setChangingRole(null)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={changeRole}
+                disabled={changingRoleLoading}
+                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+              >
+                {changingRoleLoading ? 'Changing...' : 'Change Role'}
               </button>
             </div>
           </div>
