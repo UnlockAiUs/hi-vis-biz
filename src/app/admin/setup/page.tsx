@@ -1,43 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+import {
+  loadOnboardingState,
+  saveOnboardingState,
+  INITIAL_ONBOARDING_STATE,
+  TIMEZONES,
+  SIZE_BANDS,
+  type OnboardingState,
+  type OrganizationData
+} from '@/lib/utils/onboarding-wizard'
 
-const TIMEZONES = [
-  'America/New_York',
-  'America/Chicago',
-  'America/Denver',
-  'America/Los_Angeles',
-  'America/Anchorage',
-  'Pacific/Honolulu',
-  'UTC',
-  'Europe/London',
-  'Europe/Paris',
-  'Europe/Berlin',
-  'Asia/Tokyo',
-  'Asia/Shanghai',
-  'Asia/Singapore',
-  'Australia/Sydney',
-]
-
-const SIZE_BANDS = [
-  { value: '1-10', label: '1-10 employees' },
-  { value: '11-50', label: '11-50 employees' },
-  { value: '51-200', label: '51-200 employees' },
-  { value: '201-500', label: '201-500 employees' },
-  { value: '501-1000', label: '501-1000 employees' },
-  { value: '1000+', label: '1000+ employees' },
-]
-
-export default function OrgSetupPage() {
+export default function SetupStep1Page() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [formData, setFormData] = useState({
+  const [state, setState] = useState<OnboardingState>(INITIAL_ONBOARDING_STATE)
+  const [formData, setFormData] = useState<OrganizationData>({
     name: '',
     timezone: 'America/Denver',
-    size_band: '11-50',
+    sizeBand: '11-50',
   })
 
   const supabase = createBrowserClient(
@@ -45,138 +29,212 @@ export default function OrgSetupPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  useEffect(() => {
+    const checkUserAndLoadState = async () => {
+      try {
+        // Check if user is logged in
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        
+        if (userError || !user) {
+          router.push('/auth/login')
+          return
+        }
+
+        // Check if user already has an organization
+        const { data: membership } = await supabase
+          .from('organization_members')
+          .select('org_id, role')
+          .eq('user_id', user.id)
+          .single()
+
+        if (membership) {
+          // User already has an org, redirect to admin dashboard
+          router.push('/admin')
+          return
+        }
+
+        // Load any existing wizard state
+        const savedState = loadOnboardingState()
+        setState(savedState)
+        
+        // If org data exists in saved state, populate form
+        if (savedState.organization) {
+          setFormData(savedState.organization)
+        }
+
+        setLoading(false)
+      } catch (err) {
+        console.error('Error loading state:', err)
+        setLoading(false)
+      }
+    }
+
+    checkUserAndLoadState()
+  }, [supabase, router])
+
+  const handleNext = () => {
+    // Validate form
+    if (!formData.name.trim()) {
+      setError('Please enter an organization name')
+      return
+    }
+
+    if (!formData.timezone) {
+      setError('Please select a timezone')
+      return
+    }
+
+    if (!formData.sizeBand) {
+      setError('Please select an organization size')
+      return
+    }
+
     setError(null)
 
-    try {
-      // Verify user is logged in first
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError || !user) {
-        throw new Error('You must be logged in to create an organization')
-      }
-
-      // Call the server-side API route to create organization
-      // This uses the service role key to bypass RLS
-      const response = await fetch('/api/admin/setup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          timezone: formData.timezone,
-          size_band: formData.size_band,
-        }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create organization')
-      }
-
-      // Redirect to admin dashboard
-      router.push('/admin')
-      router.refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-    } finally {
-      setLoading(false)
+    // Save to wizard state
+    const newState: OnboardingState = {
+      ...state,
+      currentStep: 2,
+      organization: {
+        name: formData.name.trim(),
+        timezone: formData.timezone,
+        sizeBand: formData.sizeBand,
+      },
     }
+    
+    setState(newState)
+    saveOnboardingState(newState)
+
+    // Navigate to Step 2
+    router.push('/admin/setup/departments')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Set up your organization
+    <div className="max-w-xl mx-auto">
+      {/* Step Header */}
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Create Your Organization
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Create your organization to start using Hi-Vis Biz
+        <p className="mt-2 text-gray-600">
+          Step 1 of 5: Enter your organization details
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
+      {/* Form */}
+      <div className="bg-white shadow rounded-lg p-6">
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+            {error}
+          </div>
+        )}
 
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Organization Name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Acme Corporation"
-                />
-              </div>
-            </div>
+        <div className="space-y-6">
+          {/* Organization Name */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Organization Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+              placeholder="Acme Corporation"
+              required
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              This is the name of your company or organization
+            </p>
+          </div>
 
-            <div>
-              <label htmlFor="timezone" className="block text-sm font-medium text-gray-700">
-                Timezone
-              </label>
-              <div className="mt-1">
-                <select
-                  id="timezone"
-                  name="timezone"
-                  value={formData.timezone}
-                  onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  {TIMEZONES.map((tz) => (
-                    <option key={tz} value={tz}>
-                      {tz.replace(/_/g, ' ')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+          {/* Timezone */}
+          <div>
+            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700">
+              Timezone <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="timezone"
+              value={formData.timezone}
+              onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+            >
+              {TIMEZONES.map((tz) => (
+                <option key={tz.value} value={tz.value}>
+                  {tz.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Used for scheduling check-ins and displaying times
+            </p>
+          </div>
 
-            <div>
-              <label htmlFor="size_band" className="block text-sm font-medium text-gray-700">
-                Organization Size
-              </label>
-              <div className="mt-1">
-                <select
-                  id="size_band"
-                  name="size_band"
-                  value={formData.size_band}
-                  onChange={(e) => setFormData({ ...formData, size_band: e.target.value })}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  {SIZE_BANDS.map((band) => (
-                    <option key={band.value} value={band.value}>
-                      {band.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+          {/* Organization Size */}
+          <div>
+            <label htmlFor="sizeBand" className="block text-sm font-medium text-gray-700">
+              Organization Size <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="sizeBand"
+              value={formData.sizeBand}
+              onChange={(e) => setFormData({ ...formData, sizeBand: e.target.value })}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+            >
+              {SIZE_BANDS.map((band) => (
+                <option key={band.value} value={band.value}>
+                  {band.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Helps us tailor the experience to your organization
+            </p>
+          </div>
+        </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Creating...' : 'Create Organization'}
-              </button>
+        {/* Navigation */}
+        <div className="mt-8 flex justify-end">
+          <button
+            type="button"
+            onClick={handleNext}
+            className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+          >
+            Next: Add Departments →
+          </button>
+        </div>
+      </div>
+
+      {/* Info Card */}
+      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-blue-800">
+              What happens next?
+            </h3>
+            <div className="mt-2 text-sm text-blue-700">
+              <ul className="list-disc pl-5 space-y-1">
+                <li>You&apos;ll create your departments</li>
+                <li>Add employees (manually or via CSV)</li>
+                <li>Assign supervisors</li>
+                <li>Review and send invites</li>
+              </ul>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
