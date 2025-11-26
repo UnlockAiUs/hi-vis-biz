@@ -141,15 +141,19 @@ export default function SettingsPage() {
     setSuccess(null)
 
     try {
-      const { error: updateError } = await supabase
-        .from('organizations')
-        .update({
+      const response = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           name: orgName.trim(),
           timezone,
-        })
-        .eq('id', orgId)
+        }),
+      })
 
-      if (updateError) throw updateError
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save settings')
+      }
 
       setSuccess('Settings saved successfully')
       setTimeout(() => setSuccess(null), 3000)
@@ -168,14 +172,18 @@ export default function SettingsPage() {
     setSuccess(null)
 
     try {
-      const { error: updateError } = await supabase
-        .from('organizations')
-        .update({
+      const response = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           schedule_config: scheduleConfig,
-        })
-        .eq('id', orgId)
+        }),
+      })
 
-      if (updateError) throw updateError
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save schedule')
+      }
 
       setSuccess('Schedule saved successfully')
       setTimeout(() => setSuccess(null), 3000)
@@ -427,26 +435,6 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* Organization Stats Card */}
-      <div className="bg-white shadow rounded-lg p-4 sm:p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Organization Stats</h2>
-        
-        <dl className="grid grid-cols-2 gap-4">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500">Created</dt>
-            <dd className="mt-1 text-lg font-semibold text-gray-900">
-              {/* Will be populated from org data */}
-              -
-            </dd>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500">Organization ID</dt>
-            <dd className="mt-1 text-xs font-mono text-gray-600 truncate">
-              {orgId?.slice(0, 8)}...
-            </dd>
-          </div>
-        </dl>
-      </div>
     </div>
   )
 }
