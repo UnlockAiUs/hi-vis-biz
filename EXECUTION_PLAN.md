@@ -3,8 +3,8 @@
 
 ## Quick Status
 ```
-CURRENT_PHASE: 0
-CURRENT_TASK: 0.7
+CURRENT_PHASE: 1
+CURRENT_TASK: 1.11
 BLOCKERS: none
 LAST_UPDATED: 2025-11-25
 LAST_AGENT: cline
@@ -77,7 +77,7 @@ LAST_AGENT: cline
   ```
   **Verify**: Both files exist, `.env.local` in `.gitignore`
 
-- [ ] `0.7` Initial commit and push
+- [x] `0.7` Initial commit and push
   ```bash
   git add .
   git commit -m "Initial Next.js setup with project structure"
@@ -86,12 +86,12 @@ LAST_AGENT: cline
   ```
   **Verify**: Code visible on GitHub
 
-- [ ] `0.8` Connect Vercel
+- [x] `0.8` Connect Vercel
   - Go to vercel.com → Add New Project
   - Import `hi-vis-biz` from GitHub
   - Framework: Next.js (auto-detected)
   - Deploy
-  **Verify**: Live URL works (shows Next.js default page)
+  **Verify**: Live URL works at https://hi-vis-biz.vercel.app/
 
 ---
 
@@ -99,57 +99,57 @@ LAST_AGENT: cline
 **Goal**: Database schema + RLS policies ready
 
 ### Tasks
-- [ ] `1.1` Create Supabase project
+- [x] `1.1` Create Supabase project
   - Go to supabase.com/dashboard → New Project
   - Name: `hi-vis-biz`
   - Generate strong DB password (save it!)
   - Region: closest to you
   - Wait for project to provision (~2 min)
-  **Verify**: Project dashboard accessible
+  **Verify**: Project dashboard accessible at https://ldmztpapxpirxpcklizs.supabase.co
 
-- [ ] `1.2` Get API keys and update `.env.local`
+- [x] `1.2` Get API keys and update `.env.local`
   - Settings → API → Copy URL and anon key
   - Copy service_role key (keep secret!)
   **Verify**: `.env.local` has real values
 
-- [ ] `1.3` Add env vars to Vercel
+- [x] `1.3` Add env vars to Vercel
   - Vercel dashboard → Project → Settings → Environment Variables
   - Add all 4 variables from `.env.local`
   **Verify**: Variables visible in Vercel dashboard
 
-- [ ] `1.4` Install Supabase client packages
+- [x] `1.4` Install Supabase client packages
   ```bash
   npm install @supabase/supabase-js @supabase/ssr
   ```
   **Verify**: Packages in `package.json`
 
-- [ ] `1.5` Create Supabase client utilities
+- [x] `1.5` Create Supabase client utilities
   - `src/lib/supabase/client.ts` (browser client)
   - `src/lib/supabase/server.ts` (server client)
   - `src/lib/supabase/middleware.ts` (auth middleware)
   **Verify**: Files exist, no TypeScript errors
 
-- [ ] `1.6` Create migration: `001_initial_schema.sql`
+- [x] `1.6` Create migration: `001_initial_schema.sql`
   - Tables: organizations, departments, organization_members
   - See spec section 6.1
   **Verify**: File in `supabase/migrations/`
 
-- [ ] `1.7` Create migration: `002_agents_sessions.sql`
+- [x] `1.7` Create migration: `002_agents_sessions.sql`
   - Tables: agents, topic_archetypes, sessions, session_topics, answers, user_topic_history
   - See spec sections 6.2, 6.3
   **Verify**: File in `supabase/migrations/`
 
-- [ ] `1.8` Create migration: `003_user_profiles.sql`
+- [x] `1.8` Create migration: `003_user_profiles.sql`
   - Table: user_profiles with JSONB profile_json
   - See spec section 6.4
   **Verify**: File in `supabase/migrations/`
 
-- [ ] `1.9` Create migration: `004_rls_policies.sql`
+- [x] `1.9` Create migration: `004_rls_policies.sql`
   - RLS policies for all tables
   - See spec section 10.4
   **Verify**: File in `supabase/migrations/`
 
-- [ ] `1.10` Create migration: `005_seed_agents.sql`
+- [x] `1.10` Create migration: `005_seed_agents.sql`
   - Insert 5 agents: role_mapper, workflow_mapper, pain_scanner, pulse, focus_tracker
   - Insert initial topic_archetypes
   **Verify**: File in `supabase/migrations/`
@@ -502,4 +502,16 @@ LAST_AGENT: cline
 2025-11-25 0.4 cline - Created Next.js project files manually (npm install deferred to Vercel)
 2025-11-25 0.5 cline - Created initial project structure
 2025-11-25 0.6 cline - Created environment files
+2025-11-25 0.7 cline - Initial commit and push to GitHub
+2025-11-25 0.8 human - Connected Vercel, deployed to https://hi-vis-biz.vercel.app/
+2025-11-25 1.1 human - Created Supabase project (https://ldmztpapxpirxpcklizs.supabase.co)
+2025-11-25 1.2 human - Got API keys and updated .env.local
+2025-11-25 1.3 human - Added env vars to Vercel
+2025-11-25 1.4 cline - Added Supabase packages to package.json
+2025-11-25 1.5 cline - Created Supabase client utilities (client.ts, server.ts, middleware.ts)
+2025-11-25 1.6 cline - Created migration 001_initial_schema.sql
+2025-11-25 1.7 cline - Created migration 002_agents_sessions.sql
+2025-11-25 1.8 cline - Created migration 003_user_profiles.sql
+2025-11-25 1.9 cline - Created migration 004_rls_policies.sql
+2025-11-25 1.10 cline - Created migration 005_seed_agents.sql
 ```
