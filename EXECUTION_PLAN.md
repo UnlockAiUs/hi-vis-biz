@@ -3,8 +3,8 @@
 
 ## Quick Status
 ```
-CURRENT_PHASE: 2
-CURRENT_TASK: 2.6
+CURRENT_PHASE: 4
+CURRENT_TASK: 4.1
 BLOCKERS: none
 LAST_UPDATED: 2025-11-25
 LAST_AGENT: cline
@@ -206,13 +206,14 @@ LAST_AGENT: cline
   - Clear session, redirect to login
   **Verify**: Logout clears session
 
-- [ ] `2.6` Test auth flow end-to-end
+- [x] `2.6` Test auth flow end-to-end
   - Register new user
   - Check email confirmation (Supabase)
   - Login
   - Access protected route
   - Logout
   **Verify**: All steps work
+  **Note**: Email callback 404 requires Supabase URL config (see below)
 
 - [x] `2.7` Commit and push
   ```bash
@@ -227,31 +228,31 @@ LAST_AGENT: cline
 **Goal**: Admin can create org, add departments, upload members
 
 ### Tasks
-- [ ] `3.1` Create org setup page
+- [x] `3.1` Create org setup page
   - `src/app/admin/setup/page.tsx`
   - Form: org name, timezone, size band
   - Creates organization + organization_member (role=owner)
   **Verify**: Org created in Supabase
 
-- [ ] `3.2` Create admin layout
+- [x] `3.2` Create admin layout
   - `src/app/admin/layout.tsx`
   - Sidebar navigation
   - Check user is admin/owner
   **Verify**: Layout renders for admin users
 
-- [ ] `3.3` Create admin dashboard
+- [x] `3.3` Create admin dashboard
   - `src/app/admin/page.tsx`
   - Overview stats placeholder
   **Verify**: Page renders
 
-- [ ] `3.4` Create departments page
+- [x] `3.4` Create departments page
   - `src/app/admin/departments/page.tsx`
   - List departments
   - Add new department form
   - Delete department
   **Verify**: CRUD works
 
-- [ ] `3.5` Create members page
+- [x] `3.5` Create members page
   - `src/app/admin/members/page.tsx`
   - List members with status
   - CSV upload or manual add
@@ -259,12 +260,12 @@ LAST_AGENT: cline
   - Activate/deactivate
   **Verify**: Members appear in Supabase
 
-- [ ] `3.6` Create invite email trigger
+- [x] `3.6` Create invite email trigger
   - Use Supabase Auth invite
   - `supabase.auth.admin.inviteUserByEmail()`
   **Verify**: Invite emails sent
 
-- [ ] `3.7` Commit and push
+- [x] `3.7` Commit and push
   ```bash
   git add .
   git commit -m "Add org admin setup and member management"
@@ -523,4 +524,19 @@ LAST_AGENT: cline
 2025-11-25 2.4 cline - Created auth middleware
 2025-11-25 2.5 cline - Created logout functionality and server action
 2025-11-25 2.7 cline - Committed and pushed auth flow to GitHub
+2025-11-25 2.6 human - Tested auth flow (login/register/logout works)
+2025-11-25 cline - Added landing page with login/register links
+2025-11-25 3.1 cline - Created org setup page
+2025-11-25 3.2 cline - Created admin layout with sidebar navigation
+2025-11-25 3.3 cline - Created admin dashboard with stats
+2025-11-25 3.4 cline - Created departments page with CRUD
+2025-11-25 3.5 cline - Created members page with invite and CSV upload
+2025-11-25 3.6 cline - Created invite email API route
+2025-11-25 3.7 cline - Committed and pushed Phase 3
 ```
+
+### Supabase Auth URL Configuration (Required)
+To fix email confirmation link 404:
+1. Go to https://ldmztpapxpirxpcklizs.supabase.co → Authentication → URL Configuration
+2. Set **Site URL**: `https://hi-vis-biz.vercel.app`
+3. Add to **Redirect URLs**: `https://hi-vis-biz.vercel.app/auth/callback`
