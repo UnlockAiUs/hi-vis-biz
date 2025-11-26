@@ -1,6 +1,35 @@
 import { ProfileJson } from '@/types/database'
 import { AgentCode } from '@/lib/ai/agents'
 
+// Schedule types
+export type DaySchedule = {
+  active: boolean
+  start: string
+  end: string
+}
+
+export type ScheduleConfig = {
+  mon: DaySchedule
+  tue: DaySchedule
+  wed: DaySchedule
+  thu: DaySchedule
+  fri: DaySchedule
+  sat: DaySchedule
+  sun: DaySchedule
+}
+
+export const DEFAULT_SCHEDULE: ScheduleConfig = {
+  mon: { active: true, start: '09:00', end: '17:00' },
+  tue: { active: true, start: '09:00', end: '17:00' },
+  wed: { active: true, start: '09:00', end: '17:00' },
+  thu: { active: true, start: '09:00', end: '17:00' },
+  fri: { active: true, start: '09:00', end: '17:00' },
+  sat: { active: false, start: '09:00', end: '17:00' },
+  sun: { active: false, start: '09:00', end: '17:00' },
+}
+
+const DAY_KEYS: (keyof ScheduleConfig)[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+
 // Session scheduling configuration
 export const SCHEDULING_CONFIG = {
   // Weekly check-ins
@@ -39,12 +68,77 @@ export interface UserSchedulingContext {
   profile: ProfileJson | null
   lastSessionsByAgent: Record<string, Date | null>
   pendingSessions: string[] // agent_codes with pending sessions
+  orgScheduleConfig?: ScheduleConfig | null
+  userScheduleOverride?: ScheduleConfig | null
+  timezone?: string
 }
 
 export interface ScheduledSession {
   agentCode: AgentCode
   reason: string
   priority: number
+}
+
+/**
+ * Check if scheduling is allowed based on schedule configuration
+ */
+export function isSchedulingAllowed(
+  orgSchedule: ScheduleConfig | null | undefined,
+  userOverride: ScheduleConfig | null | undefined,
+  timezone: string = 'UTC'
+): { allowed: boolean; reason: string } {
+  // Use user override if set, otherwise use org schedule, otherwise use default
+  const schedule = userOverride || orgSchedule || DEFAULT_SCHEDULE
+  
+  // Get current time in the specified timezone
+  const now = new Date()
+  let localTime: Date
+  
+  try {
+    // Convert to timezone
+    const tzString = now.toLocaleString('en-US', { timeZone: timezone })
+    localTime = new Date(tzString)
+  } catch {
+    // Fallback to UTC if timezone is invalid
+    localTime = now
+  }
+  
+  const dayOfWeek = localTime.getDay() // 0 = Sunday, 1 = Monday, etc.
+  const dayKey = DAY_KEYS[dayOfWeek]
+  const dayConfig = schedule[dayKey]
+  
+  // Check if day is active
+  if (!dayConfig.active) {
+    return { 
+      allowed: false, 
+      reason: `Scheduling is disabled on ${dayKey.charAt(0).toUpperCase() + dayKey.slice(1)}` 
+    }
+  }
+  
+  // Get current time as HH:MM
+  const hours = localTime.getHours().toString().padStart(2, '0')
+  const minutes = localTime.getMinutes().toString().padStart(2, '0')
+  const currentTime = `${hours}:${minutes}`
+  
+  // Check if current time is within the scheduled window
+  if (currentTime < dayConfig.start || currentTime > dayConfig.end) {
+    return { 
+      allowed: false, 
+      reason: `Outside of scheduled hours (${dayConfig.start} - ${dayConfig.end})` 
+    }
+  }
+  
+  return { allowed: true, reason: 'Within scheduled hours' }
+}
+
+/**
+ * Get the effective schedule for a user (user override or org default)
+ */
+export function getEffectiveSchedule(
+  orgSchedule: ScheduleConfig | null | undefined,
+  userOverride: ScheduleConfig | null | undefined
+): ScheduleConfig {
+  return userOverride || orgSchedule || DEFAULT_SCHEDULE
 }
 
 /**
@@ -55,6 +149,19 @@ export function determineSessionsToSchedule(
   maxSessions: number = 2
 ): ScheduledSession[] {
   const sessions: ScheduledSession[] = []
+  
+  // Check if scheduling is allowed based on schedule settings
+  const scheduleCheck = isSchedulingAllowed(
+    context.orgScheduleConfig,
+    context.userScheduleOverride,
+    context.timezone
+  )
+  
+  if (!scheduleCheck.allowed) {
+    // Return empty - scheduling is not allowed at this time
+    return []
+  }
+  
   const now = new Date()
   const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, etc.
   

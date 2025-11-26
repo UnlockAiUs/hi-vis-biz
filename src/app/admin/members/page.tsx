@@ -6,10 +6,54 @@ import type { OrganizationMember, Department } from '@/types/database'
 import ActionMenu, { ActionMenuIcons } from '@/components/ui/ActionMenu'
 import type { ActionMenuItem } from '@/components/ui/ActionMenu'
 
+type DaySchedule = {
+  active: boolean
+  start: string
+  end: string
+}
+
+type ScheduleConfig = {
+  mon: DaySchedule
+  tue: DaySchedule
+  wed: DaySchedule
+  thu: DaySchedule
+  fri: DaySchedule
+  sat: DaySchedule
+  sun: DaySchedule
+}
+
+const DEFAULT_SCHEDULE: ScheduleConfig = {
+  mon: { active: true, start: '09:00', end: '17:00' },
+  tue: { active: true, start: '09:00', end: '17:00' },
+  wed: { active: true, start: '09:00', end: '17:00' },
+  thu: { active: true, start: '09:00', end: '17:00' },
+  fri: { active: true, start: '09:00', end: '17:00' },
+  sat: { active: false, start: '09:00', end: '17:00' },
+  sun: { active: false, start: '09:00', end: '17:00' },
+}
+
+const DAY_LABELS: { key: keyof ScheduleConfig; label: string; short: string }[] = [
+  { key: 'mon', label: 'Monday', short: 'Mon' },
+  { key: 'tue', label: 'Tuesday', short: 'Tue' },
+  { key: 'wed', label: 'Wednesday', short: 'Wed' },
+  { key: 'thu', label: 'Thursday', short: 'Thu' },
+  { key: 'fri', label: 'Friday', short: 'Fri' },
+  { key: 'sat', label: 'Saturday', short: 'Sat' },
+  { key: 'sun', label: 'Sunday', short: 'Sun' },
+]
+
+const TIME_OPTIONS = [
+  '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
+  '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+  '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00'
+]
+
 type MemberWithProfile = OrganizationMember & { 
   email?: string
   display_name?: string
   job_title?: string
+  schedule_override?: ScheduleConfig | null
 }
 
 export default function MembersPage() {
@@ -39,6 +83,10 @@ export default function MembersPage() {
   const [editLevel, setEditLevel] = useState<'exec' | 'manager' | 'ic'>('ic')
   const [editDepartment, setEditDepartment] = useState<string>('')
   const [saving, setSaving] = useState(false)
+  
+  // Schedule override state
+  const [hasCustomSchedule, setHasCustomSchedule] = useState(false)
+  const [scheduleOverride, setScheduleOverride] = useState<ScheduleConfig>(DEFAULT_SCHEDULE)
 
   // Delete confirmation state
   const [deletingMember, setDeletingMember] = useState<MemberWithProfile | null>(null)
@@ -201,6 +249,25 @@ export default function MembersPage() {
     setEditingMember(member)
     setEditLevel((member.level as 'exec' | 'manager' | 'ic') || 'ic')
     setEditDepartment(member.department_id || '')
+    
+    // Load schedule override if exists
+    if (member.schedule_override) {
+      setHasCustomSchedule(true)
+      setScheduleOverride(member.schedule_override)
+    } else {
+      setHasCustomSchedule(false)
+      setScheduleOverride(DEFAULT_SCHEDULE)
+    }
+  }
+
+  const updateDaySchedule = (day: keyof ScheduleConfig, field: keyof DaySchedule, value: boolean | string) => {
+    setScheduleOverride(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [field]: value
+      }
+    }))
   }
 
   const saveEdit = async () => {
@@ -210,19 +277,22 @@ export default function MembersPage() {
     setError(null)
 
     try {
+      const updateData: Record<string, unknown> = { 
+        level: editLevel,
+        department_id: editDepartment || null,
+        schedule_override: hasCustomSchedule ? scheduleOverride : null
+      }
+
       const { error: updateError } = await supabase
         .from('organization_members')
-        .update({ 
-          level: editLevel,
-          department_id: editDepartment || null
-        })
+        .update(updateData)
         .eq('id', editingMember.id)
 
       if (updateError) throw updateError
 
       setMembers(members.map(m => 
         m.id === editingMember.id 
-          ? { ...m, level: editLevel, department_id: editDepartment || null } 
+          ? { ...m, level: editLevel, department_id: editDepartment || null, schedule_override: hasCustomSchedule ? scheduleOverride : null } 
           : m
       ))
       
@@ -665,7 +735,7 @@ export default function MembersPage() {
       {/* Edit Member Modal */}
       {editingMember && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Member</h3>
             <div className="space-y-4">
               <div>
@@ -692,6 +762,77 @@ export default function MembersPage() {
                     <option key={dept.id} value={dept.id}>{dept.name}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Custom Schedule Section */}
+              <div className="pt-4 border-t">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={hasCustomSchedule}
+                    onChange={(e) => setHasCustomSchedule(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Custom Schedule</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1 ml-6">
+                  Override the organization&apos;s default check-in schedule for this member
+                </p>
+
+                {hasCustomSchedule && (
+                  <div className="mt-4 space-y-2">
+                    {DAY_LABELS.map(({ key, short }) => (
+                      <div
+                        key={key}
+                        className={`flex items-center gap-2 p-2 rounded border ${
+                          scheduleOverride[key].active 
+                            ? 'bg-white border-gray-200' 
+                            : 'bg-gray-50 border-gray-100'
+                        }`}
+                      >
+                        <label className="flex items-center gap-2 min-w-[80px]">
+                          <input
+                            type="checkbox"
+                            checked={scheduleOverride[key].active}
+                            onChange={(e) => updateDaySchedule(key, 'active', e.target.checked)}
+                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className={`text-xs font-medium ${
+                            scheduleOverride[key].active ? 'text-gray-900' : 'text-gray-400'
+                          }`}>
+                            {short}
+                          </span>
+                        </label>
+
+                        <div className={`flex items-center gap-1.5 flex-1 ${
+                          !scheduleOverride[key].active ? 'opacity-50' : ''
+                        }`}>
+                          <select
+                            value={scheduleOverride[key].start}
+                            onChange={(e) => updateDaySchedule(key, 'start', e.target.value)}
+                            disabled={!scheduleOverride[key].active}
+                            className="px-1.5 py-1 text-xs border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                          >
+                            {TIME_OPTIONS.map(time => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
+                          </select>
+                          <span className="text-xs text-gray-400">to</span>
+                          <select
+                            value={scheduleOverride[key].end}
+                            onChange={(e) => updateDaySchedule(key, 'end', e.target.value)}
+                            disabled={!scheduleOverride[key].active}
+                            className="px-1.5 py-1 text-xs border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                          >
+                            {TIME_OPTIONS.map(time => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex justify-end space-x-3 mt-6">

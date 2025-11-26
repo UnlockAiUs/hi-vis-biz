@@ -4,7 +4,7 @@
 ## Quick Status
 ```
 CURRENT_PHASE: 9
-CURRENT_TASK: 9.1
+CURRENT_TASK: 9.12
 BLOCKERS: none
 LAST_UPDATED: 2025-11-26
 LAST_AGENT: cline
@@ -511,31 +511,31 @@ LAST_AGENT: cline
 ### Tasks
 
 #### Sub-Phase 9A: UI Polish (Quick Wins)
-- [ ] `9.1` Create ActionMenu dropdown component
+- [x] `9.1` Create ActionMenu dropdown component
   - `src/components/ui/ActionMenu.tsx`
   - Three-dots icon triggers dropdown
   - Reusable for both Members and Departments pages
   - Works on both mobile and desktop
   **Verify**: Component renders with dropdown options
 
-- [ ] `9.2` Update Members page - Show names instead of user IDs
+- [x] `9.2` Update Members page - Show names instead of user IDs
   - Join with user_profiles to get display names
   - Update API to fetch profile names
   - Show name with fallback to email/user_id
   **Verify**: Members show by name, not user ID
 
-- [ ] `9.3` Update Members page - Consolidate Edit modal
+- [x] `9.3` Update Members page - Consolidate Edit modal
   - Merge "Change Role" into Edit modal
   - Edit modal shows: Name (read-only), Level, Department, Role (if owner)
   - Replace action buttons with ActionMenu dropdown
   **Verify**: Single Edit modal with all options
 
-- [ ] `9.4` Update Departments page - ActionMenu dropdown
+- [x] `9.4` Update Departments page - ActionMenu dropdown
   - Replace Edit/Delete buttons with ActionMenu
   - Same pattern as Members page
   **Verify**: Consistent UI across both pages
 
-- [ ] `9.5` Commit UI polish changes
+- [x] `9.5` Commit UI polish changes
   ```bash
   git add .
   git commit -m "UI Polish: ActionMenu, member names, consolidated modals"
@@ -543,21 +543,21 @@ LAST_AGENT: cline
   ```
 
 #### Sub-Phase 9B: Organization Settings
-- [ ] `9.6` Create Organization Settings page
+- [x] `9.6` Create Organization Settings page
   - `src/app/admin/settings/page.tsx`
   - Update organization name
   - View/update timezone
   - Add link in admin sidebar
   **Verify**: Can update org name
 
-- [ ] `9.7` Create migration for schedule settings
+- [x] `9.7` Create migration for schedule settings
   - `supabase/migrations/008_schedule_settings.sql`
   - Add `schedule_config` JSONB column to organizations
   - Add `schedule_override` JSONB column to organization_members
   - Structure: `{ "mon": {"active": true, "start": "09:00", "end": "17:00"}, ... }`
   **Verify**: Migration runs successfully
 
-- [ ] `9.8` Create Schedule Settings UI
+- [x] `9.8` Create Schedule Settings UI
   - Add to Organization Settings page
   - 7-day week grid with:
     - Active/inactive toggle per day
@@ -566,19 +566,19 @@ LAST_AGENT: cline
   - Save org default schedule
   **Verify**: Can set org-wide schedule
 
-- [ ] `9.9` Add per-user schedule overrides
+- [x] `9.9` Add per-user schedule overrides
   - In Members Edit modal, add "Custom Schedule" toggle
   - When enabled, show same 7-day grid
   - Override org defaults for specific users
   **Verify**: Can override schedule per user
 
-- [ ] `9.10` Update scheduler to use schedule settings
+- [x] `9.10` Update scheduler to use schedule settings
   - `src/lib/utils/scheduler.ts`
   - Check schedule before creating sessions
   - Respect org defaults and user overrides
   **Verify**: Scheduler respects schedule settings
 
-- [ ] `9.11` Commit schedule settings
+- [x] `9.11` Commit schedule settings
   ```bash
   git add .
   git commit -m "Add organization settings and schedule configuration"
@@ -723,6 +723,17 @@ LAST_AGENT: cline
 2025-11-26 8.4 cline - Verified mobile responsiveness (Tailwind responsive classes throughout)
 2025-11-26 8.5 cline - Completed security review (RLS, secrets, API protection)
 2025-11-26 8.6 cline - Final commit and push - Production ready v1.0
+2025-11-26 9.1 cline - Created ActionMenu dropdown component
+2025-11-26 9.2 cline - Updated Members page to show names instead of user IDs
+2025-11-26 9.3 cline - Replaced action buttons with ActionMenu on Members page
+2025-11-26 9.4 cline - Replaced Edit/Delete buttons with ActionMenu on Departments page
+2025-11-26 9.5 cline - Committed and pushed Phase 9A UI polish changes
+2025-11-26 9.6 cline - Created Organization Settings page with sidebar link
+2025-11-26 9.7 cline - Created migration 008_schedule_settings.sql for schedule config columns
+2025-11-26 9.8 cline - Added Schedule Settings UI with 7-day grid to Settings page
+2025-11-26 9.9 cline - Added per-user schedule overrides in Members Edit modal
+2025-11-26 9.10 cline - Updated scheduler to use schedule settings (isSchedulingAllowed, getEffectiveSchedule)
+2025-11-26 9.11 cline - Committed schedule settings changes
 ```
 
 ### Supabase Auth URL Configuration (Required)
