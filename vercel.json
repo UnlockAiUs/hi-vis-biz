@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/internal/scheduler?secret=$SCHEDULER_SECRET",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
