@@ -30,8 +30,8 @@ export async function GET(request: Request) {
     const forwardedHost = request.headers.get('x-forwarded-host')
     const isLocalEnv = process.env.NODE_ENV === 'development'
     
-    // For invite type, redirect to onboarding
-    const redirectPath = type === 'invite' ? '/onboarding' : next
+    // For invite type, redirect to set-password page first
+    const redirectPath = type === 'invite' ? '/auth/set-password' : next
     
     if (isLocalEnv) {
       return NextResponse.redirect(`${origin}${redirectPath}`)
