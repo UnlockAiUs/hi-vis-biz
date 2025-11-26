@@ -240,10 +240,10 @@ export default async function DashboardPage() {
                 <label className="text-xs text-gray-500 uppercase tracking-wide">Department</label>
                 <p className="text-sm font-medium text-gray-900">{deptName}</p>
               </div>
-              {profileJson?.location && (
+              {typeof profileJson?.location === 'string' && profileJson.location && (
                 <div>
                   <label className="text-xs text-gray-500 uppercase tracking-wide">Location</label>
-                  <p className="text-sm font-medium text-gray-900">{profileJson?.location as string}</p>
+                  <p className="text-sm font-medium text-gray-900">{profileJson.location}</p>
                 </div>
               )}
             </div>
