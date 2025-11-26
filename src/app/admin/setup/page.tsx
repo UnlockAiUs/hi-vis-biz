@@ -51,67 +51,30 @@ export default function OrgSetupPage() {
     setError(null)
 
     try {
-      // Get current user
+      // Verify user is logged in first
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       if (userError || !user) {
         throw new Error('You must be logged in to create an organization')
       }
 
-      // Check if user already has an organization
-      const { data: existingMembership } = await supabase
-        .from('organization_members')
-        .select('org_id')
-        .eq('user_id', user.id)
-        .single()
-
-      if (existingMembership) {
-        throw new Error('You are already a member of an organization')
-      }
-
-      // Create organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
+      // Call the server-side API route to create organization
+      // This uses the service role key to bypass RLS
+      const response = await fetch('/api/admin/setup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: formData.name,
           timezone: formData.timezone,
           size_band: formData.size_band,
-        })
-        .select()
-        .single()
+        }),
+      })
 
-      if (orgError) {
-        throw new Error(orgError.message)
-      }
+      const result = await response.json()
 
-      // Create organization_member with owner role
-      const { error: memberError } = await supabase
-        .from('organization_members')
-        .insert({
-          org_id: org.id,
-          user_id: user.id,
-          role: 'owner',
-          level: 'exec',
-          status: 'active',
-        })
-
-      if (memberError) {
-        // Rollback org creation if member creation fails
-        await supabase.from('organizations').delete().eq('id', org.id)
-        throw new Error(memberError.message)
-      }
-
-      // Create initial user_profile
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          org_id: org.id,
-          user_id: user.id,
-          profile_json: {},
-        })
-
-      if (profileError) {
-        console.error('Failed to create user profile:', profileError)
-        // Non-critical, continue anyway
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create organization')
       }
 
       // Redirect to admin dashboard

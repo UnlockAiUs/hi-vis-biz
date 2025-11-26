@@ -17,16 +17,17 @@ export default async function AdminLayout({
   }
 
   // Check if user is admin/owner of an organization
-  const { data: membership } = await supabase
+  // Use maybeSingle() instead of single() to handle 0 results without error
+  const { data: membership, error: membershipError } = await supabase
     .from('organization_members')
     .select('org_id, role, organizations(name)')
     .eq('user_id', user.id)
     .in('role', ['owner', 'admin'])
-    .single()
+    .maybeSingle()
 
-  // If no org membership and not on setup page, redirect to setup
-  if (!membership) {
-    // Allow access to setup page
+  // If no org membership or error (user not in any org), allow access to setup page
+  if (!membership || membershipError) {
+    // Allow access to setup page without the admin chrome
     return <>{children}</>
   }
 
