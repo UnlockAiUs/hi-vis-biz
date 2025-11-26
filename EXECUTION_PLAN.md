@@ -3,8 +3,8 @@
 
 ## Quick Status
 ```
-CURRENT_PHASE: 8
-CURRENT_TASK: 8.6
+CURRENT_PHASE: 9
+CURRENT_TASK: 9.1
 BLOCKERS: none
 LAST_UPDATED: 2025-11-26
 LAST_AGENT: cline
@@ -502,6 +502,150 @@ LAST_AGENT: cline
   git push
   ```
   **Verify**: Live site fully functional at https://hi-vis-biz.vercel.app
+
+---
+
+## Phase 9: Admin & Org Enhancements
+**Goal**: Improve admin experience with better org management, frequency settings, and UI polish
+
+### Tasks
+
+#### Sub-Phase 9A: UI Polish (Quick Wins)
+- [ ] `9.1` Create ActionMenu dropdown component
+  - `src/components/ui/ActionMenu.tsx`
+  - Three-dots icon triggers dropdown
+  - Reusable for both Members and Departments pages
+  - Works on both mobile and desktop
+  **Verify**: Component renders with dropdown options
+
+- [ ] `9.2` Update Members page - Show names instead of user IDs
+  - Join with user_profiles to get display names
+  - Update API to fetch profile names
+  - Show name with fallback to email/user_id
+  **Verify**: Members show by name, not user ID
+
+- [ ] `9.3` Update Members page - Consolidate Edit modal
+  - Merge "Change Role" into Edit modal
+  - Edit modal shows: Name (read-only), Level, Department, Role (if owner)
+  - Replace action buttons with ActionMenu dropdown
+  **Verify**: Single Edit modal with all options
+
+- [ ] `9.4` Update Departments page - ActionMenu dropdown
+  - Replace Edit/Delete buttons with ActionMenu
+  - Same pattern as Members page
+  **Verify**: Consistent UI across both pages
+
+- [ ] `9.5` Commit UI polish changes
+  ```bash
+  git add .
+  git commit -m "UI Polish: ActionMenu, member names, consolidated modals"
+  git push
+  ```
+
+#### Sub-Phase 9B: Organization Settings
+- [ ] `9.6` Create Organization Settings page
+  - `src/app/admin/settings/page.tsx`
+  - Update organization name
+  - View/update timezone
+  - Add link in admin sidebar
+  **Verify**: Can update org name
+
+- [ ] `9.7` Create migration for schedule settings
+  - `supabase/migrations/008_schedule_settings.sql`
+  - Add `schedule_config` JSONB column to organizations
+  - Add `schedule_override` JSONB column to organization_members
+  - Structure: `{ "mon": {"active": true, "start": "09:00", "end": "17:00"}, ... }`
+  **Verify**: Migration runs successfully
+
+- [ ] `9.8` Create Schedule Settings UI
+  - Add to Organization Settings page
+  - 7-day week grid with:
+    - Active/inactive toggle per day
+    - Start time picker
+    - End time picker
+  - Save org default schedule
+  **Verify**: Can set org-wide schedule
+
+- [ ] `9.9` Add per-user schedule overrides
+  - In Members Edit modal, add "Custom Schedule" toggle
+  - When enabled, show same 7-day grid
+  - Override org defaults for specific users
+  **Verify**: Can override schedule per user
+
+- [ ] `9.10` Update scheduler to use schedule settings
+  - `src/lib/utils/scheduler.ts`
+  - Check schedule before creating sessions
+  - Respect org defaults and user overrides
+  **Verify**: Scheduler respects schedule settings
+
+- [ ] `9.11` Commit schedule settings
+  ```bash
+  git add .
+  git commit -m "Add organization settings and schedule configuration"
+  git push
+  ```
+
+#### Sub-Phase 9C: Org Chart / Direct Reports
+- [ ] `9.12` Update onboarding for direct report selection
+  - Add "Who is your direct manager?" dropdown
+  - List all org members as potential managers
+  - Optional field (can skip initially)
+  - Updates `supervisor_user_id` in organization_members
+  **Verify**: Can select manager during onboarding
+
+- [ ] `9.13` Create Org Chart visualization page
+  - `src/app/admin/org-chart/page.tsx`
+  - Tree view showing reporting structure
+  - Show unassigned members separately
+  - Add link in admin sidebar
+  **Verify**: Org chart displays hierarchy
+
+- [ ] `9.14` Add direct report prompt to AI agents
+  - Update agent context to track if supervisor is missing
+  - AI can ask "Who do you report to?" in conversations
+  - Update profile with supervisor when mentioned
+  **Verify**: AI can collect supervisor info
+
+- [ ] `9.15` Commit org chart features
+  ```bash
+  git add .
+  git commit -m "Add org chart and direct report management"
+  git push
+  ```
+
+#### Sub-Phase 9D: Multi-Organization Support
+- [ ] `9.16` Design decision: Multi-org approach
+  - Current schema already supports user in multiple orgs
+  - Need: org switcher UI in header/sidebar
+  - Need: store "current org" preference
+  **Decision needed**: Store in localStorage, cookie, or user metadata?
+
+- [ ] `9.17` Create Org Switcher component
+  - `src/components/ui/OrgSwitcher.tsx`
+  - Dropdown showing user's organizations
+  - "Create New Organization" option
+  - Persist selection
+  **Verify**: Can switch between orgs
+
+- [ ] `9.18` Create Organization creation flow
+  - Allow creating additional organizations
+  - Same email can own/be member of multiple orgs
+  - Update `/admin/setup` to support additional orgs
+  **Verify**: Can create second organization
+
+- [ ] `9.19` Update all admin/dashboard pages for multi-org
+  - Respect current org selection
+  - Filter data by selected org
+  - Update queries to use org context
+  **Verify**: Switching orgs shows correct data
+
+- [ ] `9.20` Final commit and deploy Phase 9
+  ```bash
+  git add .
+  git commit -m "Complete Phase 9: Admin & Org Enhancements"
+  git push
+  ```
+  **Verify**: All Phase 9 features working
 
 ---
 

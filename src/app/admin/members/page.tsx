@@ -3,11 +3,17 @@
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import type { OrganizationMember, Department } from '@/types/database'
+import ActionMenu, { ActionMenuIcons } from '@/components/ui/ActionMenu'
+import type { ActionMenuItem } from '@/components/ui/ActionMenu'
 
-type MemberWithEmail = OrganizationMember & { email?: string }
+type MemberWithProfile = OrganizationMember & { 
+  email?: string
+  display_name?: string
+  job_title?: string
+}
 
 export default function MembersPage() {
-  const [members, setMembers] = useState<MemberWithEmail[]>([])
+  const [members, setMembers] = useState<MemberWithProfile[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -29,18 +35,18 @@ export default function MembersPage() {
   const [showCsvUpload, setShowCsvUpload] = useState(false)
 
   // Edit member state
-  const [editingMember, setEditingMember] = useState<MemberWithEmail | null>(null)
+  const [editingMember, setEditingMember] = useState<MemberWithProfile | null>(null)
   const [editLevel, setEditLevel] = useState<'exec' | 'manager' | 'ic'>('ic')
   const [editDepartment, setEditDepartment] = useState<string>('')
   const [saving, setSaving] = useState(false)
 
   // Delete confirmation state
-  const [deletingMember, setDeletingMember] = useState<MemberWithEmail | null>(null)
+  const [deletingMember, setDeletingMember] = useState<MemberWithProfile | null>(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
 
   // Role change state
-  const [changingRole, setChangingRole] = useState<MemberWithEmail | null>(null)
+  const [changingRole, setChangingRole] = useState<MemberWithProfile | null>(null)
   const [newRole, setNewRole] = useState<'owner' | 'admin' | 'member'>('member')
   const [changingRoleLoading, setChangingRoleLoading] = useState(false)
 
@@ -72,6 +78,7 @@ export default function MembersPage() {
       setOrgId(membership.org_id)
       setCurrentUserRole(membership.role)
 
+      // Fetch members
       const { data: membersData, error: membersError } = await supabase
         .from('organization_members')
         .select('*')
@@ -80,6 +87,24 @@ export default function MembersPage() {
 
       if (membersError) throw membersError
 
+      // Fetch user profiles to get display names
+      const userIds = (membersData || []).map(m => m.user_id)
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, profile_json')
+        .in('user_id', userIds)
+
+      // Map profiles to members
+      const membersWithProfiles = (membersData || []).map(member => {
+        const profile = profiles?.find(p => p.user_id === member.user_id)
+        const profileJson = profile?.profile_json as { name?: string; job_title?: string } | null
+        return {
+          ...member,
+          display_name: profileJson?.name || undefined,
+          job_title: profileJson?.job_title || undefined,
+        }
+      })
+
       const { data: depts } = await supabase
         .from('departments')
         .select('*')
@@ -87,7 +112,7 @@ export default function MembersPage() {
         .order('name')
 
       setDepartments(depts || [])
-      setMembers(membersData || [])
+      setMembers(membersWithProfiles)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load members')
     } finally {
@@ -172,7 +197,7 @@ export default function MembersPage() {
     }
   }
 
-  const startEdit = (member: MemberWithEmail) => {
+  const startEdit = (member: MemberWithProfile) => {
     setEditingMember(member)
     setEditLevel((member.level as 'exec' | 'manager' | 'ic') || 'ic')
     setEditDepartment(member.department_id || '')
@@ -319,6 +344,61 @@ export default function MembersPage() {
   const getLevelLabel = (level: string | null) => {
     const labels = { exec: 'Executive', manager: 'Manager', ic: 'IC' }
     return labels[(level as keyof typeof labels) || 'ic'] || 'IC'
+  }
+
+  const getMemberDisplayName = (member: MemberWithProfile) => {
+    if (member.display_name) return member.display_name
+    return `User ${member.user_id.slice(0, 8)}...`
+  }
+
+  const getMemberSubtitle = (member: MemberWithProfile) => {
+    if (member.job_title) return member.job_title
+    return `Since ${new Date(member.created_at).toLocaleDateString()}`
+  }
+
+  const getActionMenuItems = (member: MemberWithProfile): ActionMenuItem[] => {
+    const items: ActionMenuItem[] = [
+      {
+        label: 'Edit',
+        onClick: () => startEdit(member),
+        icon: ActionMenuIcons.edit,
+      },
+    ]
+
+    if (currentUserRole === 'owner') {
+      items.push({
+        label: 'Change Role',
+        onClick: () => { setChangingRole(member); setNewRole(member.role as 'owner' | 'admin' | 'member'); },
+        icon: ActionMenuIcons.role,
+      })
+    }
+
+    if (member.role !== 'owner') {
+      if (member.status === 'active') {
+        items.push({
+          label: 'Deactivate',
+          onClick: () => updateMemberStatus(member.id, 'inactive'),
+          icon: ActionMenuIcons.deactivate,
+          variant: 'warning',
+        })
+      } else if (member.status === 'inactive') {
+        items.push({
+          label: 'Activate',
+          onClick: () => updateMemberStatus(member.id, 'active'),
+          icon: ActionMenuIcons.activate,
+          variant: 'success',
+        })
+      }
+
+      items.push({
+        label: 'Delete',
+        onClick: () => setDeletingMember(member),
+        icon: ActionMenuIcons.delete,
+        variant: 'danger',
+      })
+    }
+
+    return items
   }
 
   if (loading) {
@@ -501,17 +581,15 @@ export default function MembersPage() {
                   <tr key={member.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-gray-200 text-gray-600">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
+                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 font-medium">
+                          {getMemberDisplayName(member).charAt(0).toUpperCase()}
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {member.user_id.slice(0, 8)}...
+                            {getMemberDisplayName(member)}
                           </div>
                           <div className="text-sm text-gray-500">
-                            Since {new Date(member.created_at).toLocaleDateString()}
+                            {getMemberSubtitle(member)}
                           </div>
                         </div>
                       </div>
@@ -532,46 +610,8 @@ export default function MembersPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {member.role}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => startEdit(member)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Edit
-                      </button>
-                      {currentUserRole === 'owner' && (
-                        <button
-                          onClick={() => { setChangingRole(member); setNewRole(member.role as 'owner' | 'admin' | 'member'); }}
-                          className="text-purple-600 hover:text-purple-900"
-                        >
-                          Change Role
-                        </button>
-                      )}
-                      {member.role !== 'owner' && (
-                        <>
-                          {member.status === 'active' ? (
-                            <button
-                              onClick={() => updateMemberStatus(member.id, 'inactive')}
-                              className="text-yellow-600 hover:text-yellow-900"
-                            >
-                              Deactivate
-                            </button>
-                          ) : member.status === 'inactive' ? (
-                            <button
-                              onClick={() => updateMemberStatus(member.id, 'active')}
-                              className="text-green-600 hover:text-green-900"
-                            >
-                              Activate
-                            </button>
-                          ) : null}
-                          <button
-                            onClick={() => setDeletingMember(member)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <ActionMenu items={getActionMenuItems(member)} />
                     </td>
                   </tr>
                 ))
@@ -591,50 +631,19 @@ export default function MembersPage() {
               <div key={member.id} className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-gray-200 text-gray-600">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
+                    <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 font-medium">
+                      {getMemberDisplayName(member).charAt(0).toUpperCase()}
                     </div>
                     <div className="ml-3">
                       <div className="text-sm font-medium text-gray-900">
-                        {member.user_id.slice(0, 8)}...
+                        {getMemberDisplayName(member)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {member.role} • Since {new Date(member.created_at).toLocaleDateString()}
+                        {member.role} • {getMemberSubtitle(member)}
                       </div>
                     </div>
                   </div>
-                  <div className="flex space-x-1">
-                    <button
-                      onClick={() => startEdit(member)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    {currentUserRole === 'owner' && (
-                      <button
-                        onClick={() => { setChangingRole(member); setNewRole(member.role as 'owner' | 'admin' | 'member'); }}
-                        className="p-2 text-purple-600 hover:bg-purple-50 rounded"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                      </button>
-                    )}
-                    {member.role !== 'owner' && (
-                      <button
-                        onClick={() => setDeletingMember(member)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
+                  <ActionMenu items={getActionMenuItems(member)} />
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span className={`text-xs font-medium px-2.5 py-0.5 rounded ${getStatusBadge(member.status)}`}>
@@ -647,25 +656,6 @@ export default function MembersPage() {
                     {getDepartmentName(member.department_id)}
                   </span>
                 </div>
-                {member.status !== 'invited' && (
-                  <div className="mt-3">
-                    {member.status === 'active' ? (
-                      <button
-                        onClick={() => updateMemberStatus(member.id, 'inactive')}
-                        className="text-sm text-yellow-600 hover:text-yellow-900"
-                      >
-                        Deactivate
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => updateMemberStatus(member.id, 'active')}
-                        className="text-sm text-green-600 hover:text-green-900"
-                      >
-                        Activate
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
             ))
           )}
