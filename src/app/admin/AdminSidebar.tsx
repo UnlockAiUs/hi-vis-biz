@@ -1,0 +1,151 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+
+interface AdminSidebarProps {
+  orgName: string
+}
+
+export default function AdminSidebar({ orgName }: AdminSidebarProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const pathname = usePathname()
+
+  const navItems = [
+    {
+      href: '/admin',
+      label: 'Dashboard',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      ),
+    },
+    {
+      href: '/admin/departments',
+      label: 'Departments',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      ),
+    },
+    {
+      href: '/admin/members',
+      label: 'Members',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+    },
+    {
+      href: '/admin/analytics',
+      label: 'Analytics',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
+    },
+  ]
+
+  const isActive = (href: string) => {
+    if (href === '/admin') {
+      return pathname === '/admin'
+    }
+    return pathname?.startsWith(href)
+  }
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-blue-600 shadow-lg">
+        <div className="flex items-center justify-between h-14 px-4">
+          <span className="text-lg font-bold text-white">Hi-Vis Biz</span>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 text-white rounded-md hover:bg-blue-700 focus:outline-none"
+          >
+            {isOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile spacer */}
+      <div className="lg:hidden h-14" />
+
+      {/* Overlay */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Logo/Brand */}
+          <div className="flex items-center justify-center h-16 px-4 bg-blue-600">
+            <span className="text-xl font-bold text-white">Hi-Vis Biz</span>
+          </div>
+
+          {/* Org Name */}
+          <div className="px-4 py-3 border-b border-gray-200">
+            <p className="text-xs text-gray-500 uppercase tracking-wider">Organization</p>
+            <p className="text-sm font-medium text-gray-900 truncate">{orgName}</p>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  isActive(item.href)
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <span className={`mr-3 ${isActive(item.href) ? 'text-blue-500' : 'text-gray-400'}`}>
+                  {item.icon}
+                </span>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Bottom section */}
+          <div className="px-2 py-4 border-t border-gray-200">
+            <Link
+              href="/dashboard"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 hover:text-gray-900"
+            >
+              <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+              </svg>
+              Back to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}

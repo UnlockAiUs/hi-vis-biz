@@ -27,6 +27,16 @@ export default function MembersPage() {
   const [csvText, setCsvText] = useState('')
   const [showCsvUpload, setShowCsvUpload] = useState(false)
 
+  // Edit member state
+  const [editingMember, setEditingMember] = useState<MemberWithEmail | null>(null)
+  const [editLevel, setEditLevel] = useState<'exec' | 'manager' | 'ic'>('ic')
+  const [editDepartment, setEditDepartment] = useState<string>('')
+  const [saving, setSaving] = useState(false)
+
+  // Delete confirmation state
+  const [deletingMember, setDeletingMember] = useState<MemberWithEmail | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -40,7 +50,6 @@ export default function MembersPage() {
     try {
       setLoading(true)
       
-      // Get current user's org
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
@@ -55,7 +64,6 @@ export default function MembersPage() {
       
       setOrgId(membership.org_id)
 
-      // Get members with auth.users email
       const { data: membersData, error: membersError } = await supabase
         .from('organization_members')
         .select('*')
@@ -64,7 +72,6 @@ export default function MembersPage() {
 
       if (membersError) throw membersError
 
-      // Get departments
       const { data: depts } = await supabase
         .from('departments')
         .select('*')
@@ -89,7 +96,6 @@ export default function MembersPage() {
     setSuccess(null)
 
     try {
-      // Call our API route to invite the user
       const response = await fetch('/api/admin/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -134,7 +140,6 @@ export default function MembersPage() {
         throw new Error('No valid emails found in CSV')
       }
 
-      // Invite each email
       const results = await Promise.allSettled(
         emails.map(email =>
           fetch('/api/admin/invite', {
@@ -159,6 +164,67 @@ export default function MembersPage() {
     }
   }
 
+  const startEdit = (member: MemberWithEmail) => {
+    setEditingMember(member)
+    setEditLevel((member.level as 'exec' | 'manager' | 'ic') || 'ic')
+    setEditDepartment(member.department_id || '')
+  }
+
+  const saveEdit = async () => {
+    if (!editingMember) return
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const { error: updateError } = await supabase
+        .from('organization_members')
+        .update({ 
+          level: editLevel,
+          department_id: editDepartment || null
+        })
+        .eq('id', editingMember.id)
+
+      if (updateError) throw updateError
+
+      setMembers(members.map(m => 
+        m.id === editingMember.id 
+          ? { ...m, level: editLevel, department_id: editDepartment || null } 
+          : m
+      ))
+      
+      setEditingMember(null)
+      setSuccess('Member updated successfully')
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update member')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!deletingMember || deleteConfirmText !== 'DeleteForever') return
+
+    try {
+      // Delete the member
+      const { error: deleteError } = await supabase
+        .from('organization_members')
+        .delete()
+        .eq('id', deletingMember.id)
+
+      if (deleteError) throw deleteError
+
+      setMembers(members.filter(m => m.id !== deletingMember.id))
+      setDeletingMember(null)
+      setDeleteConfirmText('')
+      setSuccess('Member removed successfully')
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete member')
+    }
+  }
+
   const updateMemberStatus = async (memberId: string, status: 'active' | 'inactive') => {
     try {
       const { error: updateError } = await supabase
@@ -170,23 +236,6 @@ export default function MembersPage() {
 
       setMembers(members.map(m => 
         m.id === memberId ? { ...m, status } : m
-      ))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update member')
-    }
-  }
-
-  const updateMemberLevel = async (memberId: string, level: 'exec' | 'manager' | 'ic') => {
-    try {
-      const { error: updateError } = await supabase
-        .from('organization_members')
-        .update({ level })
-        .eq('id', memberId)
-
-      if (updateError) throw updateError
-
-      setMembers(members.map(m => 
-        m.id === memberId ? { ...m, level } : m
       ))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update member')
@@ -217,6 +266,11 @@ export default function MembersPage() {
     return styles[(level as keyof typeof styles) || 'ic'] || styles.ic
   }
 
+  const getLevelLabel = (level: string | null) => {
+    const labels = { exec: 'Executive', manager: 'Manager', ic: 'IC' }
+    return labels[(level as keyof typeof labels) || 'ic'] || 'IC'
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -226,10 +280,10 @@ export default function MembersPage() {
   }
 
   return (
-    <div>
-      <div className="mb-8 flex justify-between items-start">
+    <div className="px-2 sm:px-0">
+      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Members</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Members</h1>
           <p className="mt-1 text-sm text-gray-500">
             Manage your organization&apos;s team members
           </p>
@@ -237,13 +291,13 @@ export default function MembersPage() {
         <div className="flex gap-2">
           <button
             onClick={() => { setShowCsvUpload(true); setShowAddForm(false) }}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             Upload CSV
           </button>
           <button
             onClick={() => { setShowAddForm(true); setShowCsvUpload(false) }}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            className="flex-1 sm:flex-none px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
           >
             Add Member
           </button>
@@ -264,7 +318,7 @@ export default function MembersPage() {
 
       {/* Add Member Form */}
       {showAddForm && (
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <div className="bg-white shadow rounded-lg p-4 sm:p-6 mb-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Invite New Member</h2>
           <form onSubmit={inviteMember} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -275,7 +329,7 @@ export default function MembersPage() {
                   value={newMember.email}
                   onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
                   placeholder="employee@company.com"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                   required
                 />
               </div>
@@ -284,7 +338,7 @@ export default function MembersPage() {
                 <select
                   value={newMember.level}
                   onChange={(e) => setNewMember({ ...newMember, level: e.target.value as 'exec' | 'manager' | 'ic' })}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="ic">Individual Contributor</option>
                   <option value="manager">Manager</option>
@@ -296,7 +350,7 @@ export default function MembersPage() {
                 <select
                   value={newMember.department_id}
                   onChange={(e) => setNewMember({ ...newMember, department_id: e.target.value })}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="">No Department</option>
                   {departments.map((dept) => (
@@ -305,18 +359,18 @@ export default function MembersPage() {
                 </select>
               </div>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={inviting || !newMember.email.trim()}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {inviting ? 'Sending Invite...' : 'Send Invite'}
               </button>
@@ -327,7 +381,7 @@ export default function MembersPage() {
 
       {/* CSV Upload */}
       {showCsvUpload && (
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <div className="bg-white shadow rounded-lg p-4 sm:p-6 mb-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Upload CSV</h2>
           <p className="text-sm text-gray-500 mb-4">
             Paste a list of email addresses (one per line or comma-separated)
@@ -337,20 +391,20 @@ export default function MembersPage() {
             onChange={(e) => setCsvText(e.target.value)}
             placeholder="john@company.com&#10;jane@company.com&#10;bob@company.com"
             rows={6}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
           />
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
             <button
               type="button"
               onClick={() => setShowCsvUpload(false)}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
               Cancel
             </button>
             <button
               onClick={handleCsvUpload}
               disabled={inviting || !csvText.trim()}
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {inviting ? 'Inviting...' : 'Invite All'}
             </button>
@@ -360,103 +414,284 @@ export default function MembersPage() {
 
       {/* Members List */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Member
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Department
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Level
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Role
-              </th>
-              <th scope="col" className="relative px-6 py-3">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {members.length === 0 ? (
+        {/* Desktop Table */}
+        <div className="hidden lg:block">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">
-                  No members yet. Invite your first team member above.
-                </td>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Member
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Department
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Level
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
+                </th>
+                <th scope="col" className="relative px-6 py-3">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
-            ) : (
-              members.map((member) => (
-                <tr key={member.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-gray-200 text-gray-600">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {member.user_id.slice(0, 8)}...
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          Member since {new Date(member.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {getDepartmentName(member.department_id)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      value={member.level || 'ic'}
-                      onChange={(e) => updateMemberLevel(member.id, e.target.value as 'exec' | 'manager' | 'ic')}
-                      className={`text-xs font-medium px-2.5 py-0.5 rounded ${getLevelBadge(member.level)} border-0 cursor-pointer`}
-                    >
-                      <option value="ic">IC</option>
-                      <option value="manager">Manager</option>
-                      <option value="exec">Executive</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex text-xs font-medium px-2.5 py-0.5 rounded ${getStatusBadge(member.status)}`}>
-                      {member.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {member.role}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {member.role !== 'owner' && (
-                      member.status === 'active' ? (
-                        <button
-                          onClick={() => updateMemberStatus(member.id, 'inactive')}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Deactivate
-                        </button>
-                      ) : member.status === 'inactive' ? (
-                        <button
-                          onClick={() => updateMemberStatus(member.id, 'active')}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Activate
-                        </button>
-                      ) : null
-                    )}
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {members.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">
+                    No members yet. Invite your first team member above.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                members.map((member) => (
+                  <tr key={member.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-gray-200 text-gray-600">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {member.user_id.slice(0, 8)}...
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Since {new Date(member.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {getDepartmentName(member.department_id)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`text-xs font-medium px-2.5 py-0.5 rounded ${getLevelBadge(member.level)}`}>
+                        {getLevelLabel(member.level)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex text-xs font-medium px-2.5 py-0.5 rounded ${getStatusBadge(member.status)}`}>
+                        {member.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {member.role}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                      {member.role !== 'owner' && (
+                        <>
+                          <button
+                            onClick={() => startEdit(member)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Edit
+                          </button>
+                          {member.status === 'active' ? (
+                            <button
+                              onClick={() => updateMemberStatus(member.id, 'inactive')}
+                              className="text-yellow-600 hover:text-yellow-900"
+                            >
+                              Deactivate
+                            </button>
+                          ) : member.status === 'inactive' ? (
+                            <button
+                              onClick={() => updateMemberStatus(member.id, 'active')}
+                              className="text-green-600 hover:text-green-900"
+                            >
+                              Activate
+                            </button>
+                          ) : null}
+                          <button
+                            onClick={() => setDeletingMember(member)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="lg:hidden divide-y divide-gray-200">
+          {members.length === 0 ? (
+            <div className="px-4 py-12 text-center text-sm text-gray-500">
+              No members yet. Invite your first team member above.
+            </div>
+          ) : (
+            members.map((member) => (
+              <div key={member.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-gray-200 text-gray-600">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <div className="text-sm font-medium text-gray-900">
+                        {member.user_id.slice(0, 8)}...
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {member.role} • Since {new Date(member.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  {member.role !== 'owner' && (
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => startEdit(member)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setDeletingMember(member)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded ${getStatusBadge(member.status)}`}>
+                    {member.status}
+                  </span>
+                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded ${getLevelBadge(member.level)}`}>
+                    {getLevelLabel(member.level)}
+                  </span>
+                  <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                    {getDepartmentName(member.department_id)}
+                  </span>
+                </div>
+                {member.role !== 'owner' && member.status !== 'invited' && (
+                  <div className="mt-3">
+                    {member.status === 'active' ? (
+                      <button
+                        onClick={() => updateMemberStatus(member.id, 'inactive')}
+                        className="text-sm text-yellow-600 hover:text-yellow-900"
+                      >
+                        Deactivate
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => updateMemberStatus(member.id, 'active')}
+                        className="text-sm text-green-600 hover:text-green-900"
+                      >
+                        Activate
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
+
+      {/* Edit Member Modal */}
+      {editingMember && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Member</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
+                <select
+                  value={editLevel}
+                  onChange={(e) => setEditLevel(e.target.value as 'exec' | 'manager' | 'ic')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="ic">Individual Contributor</option>
+                  <option value="manager">Manager</option>
+                  <option value="exec">Executive</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <select
+                  value={editDepartment}
+                  onChange={(e) => setEditDepartment(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="">No Department</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setEditingMember(null)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={saving}
+                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingMember && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Member</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Are you sure you want to remove this member from the organization? 
+              This action cannot be undone.
+            </p>
+            <p className="text-sm text-gray-700 mb-2">
+              Type <strong className="text-red-600">DeleteForever</strong> to confirm:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 text-sm mb-4"
+              placeholder="DeleteForever"
+            />
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => { setDeletingMember(null); setDeleteConfirmText('') }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleteConfirmText !== 'DeleteForever'}
+                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Delete Forever
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
