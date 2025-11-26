@@ -4,9 +4,9 @@
 ## Quick Status
 ```
 CURRENT_PHASE: 4
-CURRENT_TASK: 4.1
+CURRENT_TASK: 4.5
 BLOCKERS: none
-LAST_UPDATED: 2025-11-25
+LAST_UPDATED: 2025-11-26
 LAST_AGENT: cline
 ```
 
@@ -278,24 +278,24 @@ LAST_AGENT: cline
 **Goal**: Invited employees can join and complete profile
 
 ### Tasks
-- [ ] `4.1` Create invite acceptance flow
+- [x] `4.1` Create invite acceptance flow
   - Handle Supabase invite token
   - Set password
   - Create organization_member record
   **Verify**: Invited user can set password
 
-- [ ] `4.2` Create employee profile setup
+- [x] `4.2` Create employee profile setup
   - `src/app/onboarding/page.tsx`
   - Form: name, title, department, supervisor (optional)
   - Creates/updates user profile
   **Verify**: Profile saved to user_profiles
 
-- [ ] `4.3` Create employee dashboard layout
+- [x] `4.3` Create employee dashboard layout
   - `src/app/dashboard/layout.tsx`
   - Simple navigation
   **Verify**: Layout renders
 
-- [ ] `4.4` Create employee dashboard
+- [x] `4.4` Create employee dashboard
   - `src/app/dashboard/page.tsx`
   - Show pending sessions
   - Show profile summary
@@ -533,6 +533,10 @@ LAST_AGENT: cline
 2025-11-25 3.5 cline - Created members page with invite and CSV upload
 2025-11-25 3.6 cline - Created invite email API route
 2025-11-25 3.7 cline - Committed and pushed Phase 3
+2025-11-26 4.1 cline - Invite acceptance flow complete (set-password redirects to onboarding)
+2025-11-26 4.2 cline - Created employee profile setup page (/onboarding)
+2025-11-26 4.3 cline - Created employee dashboard layout with navigation
+2025-11-26 4.4 cline - Enhanced employee dashboard with profile, sessions, stats
 ```
 
 ### Supabase Auth URL Configuration (Required)

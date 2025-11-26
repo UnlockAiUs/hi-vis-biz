@@ -96,8 +96,8 @@ export default function SetPasswordPage() {
       .update({ status: 'active' })
       .eq('user_id', user.id)
 
-    // Password set successfully, redirect to dashboard
-    router.push('/dashboard')
+    // Password set successfully, redirect to onboarding to complete profile
+    router.push('/onboarding')
   }
 
   if (checking) {
