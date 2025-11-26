@@ -4,7 +4,7 @@
 ## Quick Status
 ```
 CURRENT_PHASE: 9
-CURRENT_TASK: 9.12
+CURRENT_TASK: 9.16
 BLOCKERS: none
 LAST_UPDATED: 2025-11-26
 LAST_AGENT: cline
@@ -586,27 +586,27 @@ LAST_AGENT: cline
   ```
 
 #### Sub-Phase 9C: Org Chart / Direct Reports
-- [ ] `9.12` Update onboarding for direct report selection
+- [x] `9.12` Update onboarding for direct report selection
   - Add "Who is your direct manager?" dropdown
   - List all org members as potential managers
   - Optional field (can skip initially)
   - Updates `supervisor_user_id` in organization_members
   **Verify**: Can select manager during onboarding
 
-- [ ] `9.13` Create Org Chart visualization page
+- [x] `9.13` Create Org Chart visualization page
   - `src/app/admin/org-chart/page.tsx`
   - Tree view showing reporting structure
   - Show unassigned members separately
   - Add link in admin sidebar
   **Verify**: Org chart displays hierarchy
 
-- [ ] `9.14` Add direct report prompt to AI agents
+- [x] `9.14` Add direct report prompt to AI agents
   - Update agent context to track if supervisor is missing
   - AI can ask "Who do you report to?" in conversations
   - Update profile with supervisor when mentioned
   **Verify**: AI can collect supervisor info
 
-- [ ] `9.15` Commit org chart features
+- [x] `9.15` Commit org chart features
   ```bash
   git add .
   git commit -m "Add org chart and direct report management"
@@ -734,6 +734,10 @@ LAST_AGENT: cline
 2025-11-26 9.9 cline - Added per-user schedule overrides in Members Edit modal
 2025-11-26 9.10 cline - Updated scheduler to use schedule settings (isSchedulingAllowed, getEffectiveSchedule)
 2025-11-26 9.11 cline - Committed schedule settings changes
+2025-11-26 9.12 cline - Updated onboarding for direct report selection (manager dropdown)
+2025-11-26 9.13 cline - Created Org Chart visualization page with tree view
+2025-11-26 9.14 cline - Added direct report prompt to AI agents (hasSupervisor context)
+2025-11-26 9.15 cline - Committed org chart features
 ```
 
 ### Supabase Auth URL Configuration (Required)

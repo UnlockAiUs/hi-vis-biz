@@ -23,6 +23,10 @@ export interface AgentContext {
   sessionId: string
   topicCode: string
   
+  // Supervisor/Manager information
+  hasSupervisor: boolean
+  supervisorName?: string
+  
   // Conversation history for this session
   conversationHistory: Array<{
     role: 'user' | 'assistant'
@@ -103,6 +107,12 @@ export function buildContextPrompt(context: AgentContext): string {
     parts.push(`They are ${levelName}.`)
   }
   
+  if (context.hasSupervisor && context.supervisorName) {
+    parts.push(`They report to ${context.supervisorName}.`)
+  } else if (!context.hasSupervisor && context.level !== 'exec') {
+    parts.push(`IMPORTANT: They have not set who they report to yet. If natural in conversation, ask who their direct manager is.`)
+  }
+  
   if (context.profile?.role_summary) {
     parts.push(`Role summary: ${context.profile.role_summary}`)
   }
@@ -112,6 +122,24 @@ export function buildContextPrompt(context: AgentContext): string {
   }
   
   return parts.join(' ')
+}
+
+// Helper to check if supervisor info was mentioned in user message
+export function extractSupervisorMention(message: string): string | null {
+  // Look for patterns like "I report to [Name]", "My manager is [Name]", "[Name] is my boss"
+  const patterns = [
+    /(?:i report to|my manager is|my boss is|i work for|my supervisor is|my lead is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+is my (?:manager|boss|supervisor|lead)/i,
+  ]
+  
+  for (const pattern of patterns) {
+    const match = message.match(pattern)
+    if (match && match[1]) {
+      return match[1].trim()
+    }
+  }
+  
+  return null
 }
 
 // Helper to check if we have enough information to extract data

@@ -74,36 +74,37 @@ export default function OnboardingPage() {
 
         setDepartments(deptData || [])
 
-        // Load potential supervisors (active members in the same org, excluding self)
+        // Load potential managers (all active members in the same org, excluding self)
         const { data: membersData } = await supabase
           .from('organization_members')
           .select('*')
           .eq('org_id', memberData.org_id)
           .eq('status', 'active')
           .neq('user_id', user.id)
-          .in('level', ['exec', 'manager'])
 
-        // Fetch emails for supervisors
+        // Fetch names for potential managers
         if (membersData && membersData.length > 0) {
-          const membersWithEmails: MemberWithEmail[] = []
+          const membersWithNames: MemberWithEmail[] = []
           for (const member of membersData) {
-            // Get user profile to find their name, or fall back to auth metadata
+            // Get user profile to find their name
             const { data: profileData } = await supabase
               .from('user_profiles')
               .select('profile_json')
               .eq('user_id', member.user_id)
               .single()
             
-            const profileName = profileData?.profile_json 
-              ? (profileData.profile_json as Record<string, unknown>).name as string
-              : null
+            const profileJson = profileData?.profile_json as Record<string, unknown> | null
+            const profileName = profileJson?.name as string | null
+            const roleTitle = profileJson?.role_summary as string | null
 
-            membersWithEmails.push({
+            membersWithNames.push({
               ...member,
-              email: profileName || member.user_id.substring(0, 8) + '...'
+              email: profileName || `Team Member (${member.level})`
             })
           }
-          setPotentialSupervisors(membersWithEmails)
+          // Sort by name for easier selection
+          membersWithNames.sort((a, b) => (a.email || '').localeCompare(b.email || ''))
+          setPotentialSupervisors(membersWithNames)
         }
 
         setChecking(false)
@@ -351,27 +352,28 @@ export default function OnboardingPage() {
               />
             </div>
 
-            {potentialSupervisors.length > 0 && (
-              <div>
-                <label htmlFor="supervisor" className="block text-sm font-medium text-gray-700">
-                  Supervisor <span className="text-gray-400">(optional)</span>
-                </label>
-                <select
-                  id="supervisor"
-                  name="supervisor"
-                  value={supervisorId}
-                  onChange={(e) => setSupervisorId(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
-                >
-                  <option value="">Select your supervisor</option>
-                  {potentialSupervisors.map((member) => (
-                    <option key={member.id} value={member.user_id}>
-                      {member.email} ({member.level})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div>
+              <label htmlFor="supervisor" className="block text-sm font-medium text-gray-700">
+                Who is your direct manager? <span className="text-gray-400">(optional)</span>
+              </label>
+              <select
+                id="supervisor"
+                name="supervisor"
+                value={supervisorId}
+                onChange={(e) => setSupervisorId(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+              >
+                <option value="">I&apos;ll set this later</option>
+                {potentialSupervisors.map((member) => (
+                  <option key={member.id} value={member.user_id}>
+                    {member.email}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Select the person you report to directly. You can update this anytime.
+              </p>
+            </div>
 
             <div>
               <button

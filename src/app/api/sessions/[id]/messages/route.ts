@@ -61,6 +61,7 @@ export async function POST(
     .from('organization_members')
     .select(`
       level,
+      supervisor_user_id,
       departments (
         name
       )
@@ -68,6 +69,21 @@ export async function POST(
     .eq('user_id', user.id)
     .eq('org_id', session.org_id)
     .single()
+  
+  // Get supervisor name if exists
+  let supervisorName: string | undefined
+  if (membership?.supervisor_user_id) {
+    const { data: supervisorProfile } = await supabase
+      .from('user_profiles')
+      .select('profile_json')
+      .eq('user_id', membership.supervisor_user_id)
+      .single()
+    
+    if (supervisorProfile?.profile_json) {
+      const supervisorJson = supervisorProfile.profile_json as Record<string, unknown>
+      supervisorName = supervisorJson?.name as string | undefined
+    }
+  }
   
   // Get existing answers for this session (conversation history)
   const { data: existingAnswers } = await supabase
@@ -117,6 +133,8 @@ export async function POST(
     profile: profileJson,
     sessionId,
     topicCode: session.agent_code, // Using agent_code as topic for now
+    hasSupervisor: !!membership?.supervisor_user_id,
+    supervisorName,
     conversationHistory
   }
   
