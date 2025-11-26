@@ -30,8 +30,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
     }
 
+    // Use service client for all operations (bypasses RLS)
+    const serviceClient = await createServiceClient()
+
     // Get the member to delete
-    const { data: memberToDelete } = await supabase
+    const { data: memberToDelete } = await serviceClient
       .from('organization_members')
       .select('org_id, role, user_id')
       .eq('id', memberId)
@@ -46,21 +49,37 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
     }
 
-    // Can't delete owner
+    // Can't delete owner - they must be demoted first
     if (memberToDelete.role === 'owner') {
-      return NextResponse.json({ error: 'Cannot delete organization owner' }, { status: 400 })
+      return NextResponse.json({ error: 'Cannot delete an owner. Demote them first.' }, { status: 400 })
     }
 
-    // Use service client to delete (bypasses RLS)
-    const serviceClient = await createServiceClient()
-    
+    // Delete user profile first (if exists)
+    await serviceClient
+      .from('user_profiles')
+      .delete()
+      .eq('user_id', memberToDelete.user_id)
+
+    // Delete the organization membership
     const { error: deleteError } = await serviceClient
       .from('organization_members')
       .delete()
       .eq('id', memberId)
 
     if (deleteError) {
+      console.error('Delete membership error:', deleteError)
       return NextResponse.json({ error: deleteError.message }, { status: 500 })
+    }
+
+    // Also delete the user from Supabase Auth
+    const { error: authDeleteError } = await serviceClient.auth.admin.deleteUser(
+      memberToDelete.user_id
+    )
+
+    if (authDeleteError) {
+      console.error('Delete auth user error:', authDeleteError)
+      // Don't fail the request - the membership is already deleted
+      // The orphaned auth user can be cleaned up later
     }
 
     return NextResponse.json({ success: true })
@@ -74,7 +93,7 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
-// PATCH /api/admin/members - Update member role (promote to owner)
+// PATCH /api/admin/members - Update member role
 export async function PATCH(request: NextRequest) {
   try {
     const { memberId, role } = await request.json()
@@ -88,7 +107,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
     }
 
-    // Verify current user is owner (only owners can promote)
+    // Verify current user is owner (only owners can change roles)
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -96,10 +115,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
+    // Use service client for all operations (bypasses RLS)
+    const serviceClient = await createServiceClient()
+
     // Check user is owner
-    const { data: currentUserMembership } = await supabase
+    const { data: currentUserMembership } = await serviceClient
       .from('organization_members')
-      .select('org_id, role')
+      .select('id, org_id, role')
       .eq('user_id', user.id)
       .eq('role', 'owner')
       .single()
@@ -109,9 +131,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Get the member to update
-    const { data: memberToUpdate } = await supabase
+    const { data: memberToUpdate } = await serviceClient
       .from('organization_members')
-      .select('org_id, role')
+      .select('id, org_id, role, user_id')
       .eq('id', memberId)
       .single()
 
@@ -124,9 +146,22 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
     }
 
-    // Use service client to update (bypasses RLS)
-    const serviceClient = await createServiceClient()
-    
+    // If demoting an owner, ensure there's at least one other owner
+    if (memberToUpdate.role === 'owner' && role !== 'owner') {
+      const { data: owners } = await serviceClient
+        .from('organization_members')
+        .select('id')
+        .eq('org_id', currentUserMembership.org_id)
+        .eq('role', 'owner')
+
+      if (!owners || owners.length <= 1) {
+        return NextResponse.json({ 
+          error: 'Cannot demote the last owner. Promote someone else to owner first.' 
+        }, { status: 400 })
+      }
+    }
+
+    // Update the role
     const { error: updateError } = await serviceClient
       .from('organization_members')
       .update({ role })
