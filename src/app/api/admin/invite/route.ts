@@ -3,8 +3,16 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
-    // Get request body
-    const { email, level, department_id } = await request.json()
+    // Get request body - now includes new enhanced onboarding fields
+    const { 
+      email, 
+      level, 
+      department_id,
+      name,           // display_name
+      title,          // job_title
+      hasDirectReports = false,
+      canViewReports = false
+    } = await request.json()
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
@@ -71,6 +79,13 @@ export async function POST(request: NextRequest) {
               level: level || 'ic',
               department_id: department_id || null,
               status: 'active',
+              // New enhanced onboarding fields
+              display_name: name || null,
+              job_title: title || null,
+              has_direct_reports: hasDirectReports,
+              can_view_reports: canViewReports,
+              invited_email: email,
+              invite_status: 'accepted', // Already exists, so accepted
             })
 
           if (memberError) {
@@ -88,7 +103,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create invite' }, { status: 500 })
     }
 
-    // Create organization_member record with invited status
+    // Create organization_member record with invited status and new fields
     const { error: memberError } = await supabase
       .from('organization_members')
       .insert({
@@ -98,6 +113,14 @@ export async function POST(request: NextRequest) {
         level: level || 'ic',
         department_id: department_id || null,
         status: 'invited',
+        // New enhanced onboarding fields
+        display_name: name || null,
+        job_title: title || null,
+        has_direct_reports: hasDirectReports,
+        can_view_reports: canViewReports,
+        invited_email: email,
+        invite_status: 'sent',
+        invite_sent_at: new Date().toISOString(),
       })
 
     if (memberError) {

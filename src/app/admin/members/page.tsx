@@ -51,8 +51,8 @@ const TIME_OPTIONS = [
 
 type MemberWithProfile = OrganizationMember & { 
   email?: string
-  display_name?: string
-  job_title?: string
+  profile_display_name?: string
+  profile_job_title?: string
   schedule_override?: ScheduleConfig | null
 }
 
@@ -69,8 +69,12 @@ export default function MembersPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [newMember, setNewMember] = useState({
     email: '',
+    name: '',
+    title: '',
     level: 'ic' as 'exec' | 'manager' | 'ic',
     department_id: '',
+    hasDirectReports: false,
+    canViewReports: false,
   })
   const [inviting, setInviting] = useState(false)
 
@@ -142,14 +146,14 @@ export default function MembersPage() {
         .select('user_id, profile_json')
         .in('user_id', userIds)
 
-      // Map profiles to members
+      // Map profiles to members - use org_member fields first, then fall back to profile
       const membersWithProfiles = (membersData || []).map(member => {
         const profile = profiles?.find(p => p.user_id === member.user_id)
-        const profileJson = profile?.profile_json as { name?: string; job_title?: string } | null
+        const profileJson = profile?.profile_json as { name?: string; role_summary?: string } | null
         return {
           ...member,
-          display_name: profileJson?.name || undefined,
-          job_title: profileJson?.job_title || undefined,
+          profile_display_name: profileJson?.name || undefined,
+          profile_job_title: profileJson?.role_summary || undefined,
         }
       })
 
@@ -182,8 +186,12 @@ export default function MembersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: newMember.email.trim(),
+          name: newMember.name.trim() || null,
+          title: newMember.title.trim() || null,
           level: newMember.level,
           department_id: newMember.department_id || null,
+          hasDirectReports: newMember.hasDirectReports,
+          canViewReports: newMember.canViewReports,
         }),
       })
 
@@ -194,7 +202,7 @@ export default function MembersPage() {
       }
 
       setSuccess(`Invitation sent to ${newMember.email}`)
-      setNewMember({ email: '', level: 'ic', department_id: '' })
+      setNewMember({ email: '', name: '', title: '', level: 'ic', department_id: '', hasDirectReports: false, canViewReports: false })
       setShowAddForm(false)
       loadData()
     } catch (err) {
@@ -417,13 +425,70 @@ export default function MembersPage() {
   }
 
   const getMemberDisplayName = (member: MemberWithProfile) => {
+    // First check organization_members.display_name (from enhanced onboarding)
     if (member.display_name) return member.display_name
-    return `User ${member.user_id.slice(0, 8)}...`
+    // Then check profile
+    if (member.profile_display_name) return member.profile_display_name
+    // Then check invited_email
+    if (member.invited_email) return member.invited_email
+    // Finally fall back to user_id
+    if (member.user_id) return `User ${member.user_id.slice(0, 8)}...`
+    return 'Pending Invite'
   }
 
   const getMemberSubtitle = (member: MemberWithProfile) => {
+    // First check organization_members.job_title (from enhanced onboarding)
     if (member.job_title) return member.job_title
+    // Then check profile
+    if (member.profile_job_title) return member.profile_job_title
+    // Fall back to join date
     return `Since ${new Date(member.created_at).toLocaleDateString()}`
+  }
+
+  const getInviteStatusBadge = (status: string | null | undefined) => {
+    const styles = {
+      pending: 'bg-gray-100 text-gray-800',
+      sent: 'bg-yellow-100 text-yellow-800',
+      accepted: 'bg-green-100 text-green-800',
+    }
+    return styles[(status as keyof typeof styles) || 'pending'] || styles.pending
+  }
+
+  const resendInvite = async (member: MemberWithProfile) => {
+    if (!member.invited_email) {
+      setError('No email address found for this member')
+      return
+    }
+
+    setInviting(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const response = await fetch('/api/admin/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: member.invited_email,
+          level: member.level || 'ic',
+          department_id: member.department_id || null,
+          resend: true,
+        }),
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to resend invite')
+      }
+
+      setSuccess(`Invitation resent to ${member.invited_email}`)
+      loadData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resend invite')
+    } finally {
+      setInviting(false)
+    }
   }
 
   const getActionMenuItems = (member: MemberWithProfile): ActionMenuItem[] => {
@@ -434,6 +499,15 @@ export default function MembersPage() {
         icon: ActionMenuIcons.edit,
       },
     ]
+
+    // Add resend invite option for sent status
+    if (member.invite_status === 'sent' && member.invited_email) {
+      items.push({
+        label: 'Resend Invite',
+        onClick: () => resendInvite(member),
+        icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+      })
+    }
 
     if (currentUserRole === 'owner') {
       items.push({
@@ -521,9 +595,9 @@ export default function MembersPage() {
         <div className="bg-white shadow rounded-lg p-4 sm:p-6 mb-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Invite New Member</h2>
           <form onSubmit={inviteMember} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <label className="block text-sm font-medium text-gray-700">Email *</label>
                 <input
                   type="email"
                   value={newMember.email}
@@ -531,6 +605,26 @@ export default function MembersPage() {
                   placeholder="employee@company.com"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Name</label>
+                <input
+                  type="text"
+                  value={newMember.name}
+                  onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                  placeholder="John Smith"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Job Title</label>
+                <input
+                  type="text"
+                  value={newMember.title}
+                  onChange={(e) => setNewMember({ ...newMember, title: e.target.value })}
+                  placeholder="Senior Developer"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
               </div>
               <div>
@@ -558,8 +652,31 @@ export default function MembersPage() {
                   ))}
                 </select>
               </div>
+              <div className="flex flex-col justify-end">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={newMember.hasDirectReports}
+                      onChange={(e) => setNewMember({ ...newMember, hasDirectReports: e.target.checked })}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-gray-700">Has Direct Reports</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={newMember.canViewReports}
+                      onChange={(e) => setNewMember({ ...newMember, canViewReports: e.target.checked })}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-gray-700">Can View Reports</span>
+                  </label>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row justify-end gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 border-t">
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
@@ -632,7 +749,10 @@ export default function MembersPage() {
                   Status
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
+                  Invite
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Permissions
                 </th>
                 <th scope="col" className="relative px-6 py-3">
                   <span className="sr-only">Actions</span>
@@ -677,8 +797,27 @@ export default function MembersPage() {
                         {member.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {member.role}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex text-xs font-medium px-2.5 py-0.5 rounded ${getInviteStatusBadge(member.invite_status)}`}>
+                        {member.invite_status || 'pending'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex gap-1">
+                        {member.has_direct_reports && (
+                          <span className="inline-flex text-xs font-medium px-2 py-0.5 rounded bg-purple-100 text-purple-800" title="Has Direct Reports">
+                            Manager
+                          </span>
+                        )}
+                        {member.can_view_reports && (
+                          <span className="inline-flex text-xs font-medium px-2 py-0.5 rounded bg-blue-100 text-blue-800" title="Can View Reports">
+                            Reports
+                          </span>
+                        )}
+                        {!member.has_direct_reports && !member.can_view_reports && (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <ActionMenu items={getActionMenuItems(member)} />
@@ -719,12 +858,25 @@ export default function MembersPage() {
                   <span className={`text-xs font-medium px-2.5 py-0.5 rounded ${getStatusBadge(member.status)}`}>
                     {member.status}
                   </span>
+                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded ${getInviteStatusBadge(member.invite_status)}`}>
+                    {member.invite_status || 'pending'}
+                  </span>
                   <span className={`text-xs font-medium px-2.5 py-0.5 rounded ${getLevelBadge(member.level)}`}>
                     {getLevelLabel(member.level)}
                   </span>
                   <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-gray-100 text-gray-600">
                     {getDepartmentName(member.department_id)}
                   </span>
+                  {member.has_direct_reports && (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-purple-100 text-purple-800">
+                      Manager
+                    </span>
+                  )}
+                  {member.can_view_reports && (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                      Reports
+                    </span>
+                  )}
                 </div>
               </div>
             ))

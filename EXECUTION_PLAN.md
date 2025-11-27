@@ -4,7 +4,7 @@
 ## Quick Status
 ```
 CURRENT_PHASE: 10
-CURRENT_TASK: 10.18
+CURRENT_TASK: 10.25
 BLOCKERS: none
 LAST_UPDATED: 2025-11-26
 LAST_AGENT: cline
@@ -253,13 +253,13 @@ The current onboarding flow has issues:
 ### Sub-Phase 10G: Step 6 - Employee Onboarding
 **Goal**: Invited employees confirm their info and start first micro-session
 
-- [ ] `10.18` Update auth callback to handle invite matching
+- [x] `10.18` Update auth callback to handle invite matching
   - When user accepts invite and sets password, match by email
   - Link auth.users.id to existing organization_members record (where invited_email = user.email)
   - Update organization_members.user_id and invite_status = 'accepted'
   **Verify**: Invited user gets linked to correct org member record
 
-- [ ] `10.19` Rework employee onboarding page
+- [x] `10.19` Rework employee onboarding page
   - `src/app/onboarding/page.tsx` (replace existing)
   - Pre-fill with data from organization_members record:
     - Name (display_name) - editable
@@ -270,7 +270,7 @@ The current onboarding flow has issues:
   - Create initial session with role_mapper agent if none exists
   **Verify**: Employee sees pre-filled data, can confirm, starts micro-session
 
-- [ ] `10.20` Commit Step 6
+- [x] `10.20` Commit Step 6
   ```bash
   git add .
   git commit -m "Add onboarding Step 6: Employee confirmation + first session"
@@ -282,7 +282,7 @@ The current onboarding flow has issues:
 ### Sub-Phase 10H: Update Admin Pages
 **Goal**: Update existing admin pages to work with new data model
 
-- [ ] `10.21` Update Members page
+- [x] `10.21` Update Members page
   - `src/app/admin/members/page.tsx`
   - Show display_name, job_title from organization_members
   - Show invite_status (pending/sent/accepted)
@@ -290,17 +290,17 @@ The current onboarding flow has issues:
   - Show has_direct_reports and can_view_reports badges
   **Verify**: Members page shows new fields correctly
 
-- [ ] `10.22` Update Departments page
+- [x] `10.22` Update Departments page
   - Show member counts per department
   - Can still add/edit/delete departments post-setup
   **Verify**: Departments page works with new flow
 
-- [ ] `10.23` Update Org Chart page
+- [x] `10.23` Update Org Chart page
   - Use has_direct_reports to show manager nodes
   - Use supervisor assignments from organization_members
   **Verify**: Org chart reflects new supervisor data
 
-- [ ] `10.24` Commit admin page updates
+- [x] `10.24` Commit admin page updates
   ```bash
   git add .
   git commit -m "Update admin pages for new onboarding data model"
@@ -348,6 +348,8 @@ The current onboarding flow has issues:
 2025-11-26 10.10-10.12 cline - Step 3: Employees (manual + CSV)
 2025-11-26 10.13-10.14 cline - Step 4: Supervisor Assignment
 2025-11-26 10.15-10.17 cline - Step 5: Review & Send Invites
+2025-11-26 10.18-10.20 cline - Step 6: Employee confirmation + first session
+2025-11-26 10.21-10.24 cline - Admin page updates (Members, Departments, Org Chart)
 ```
 
 ---

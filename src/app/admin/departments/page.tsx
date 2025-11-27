@@ -2,12 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import type { Department } from '@/types/database'
+import type { Department, OrganizationMember } from '@/types/database'
 import ActionMenu, { ActionMenuIcons } from '@/components/ui/ActionMenu'
 import type { ActionMenuItem } from '@/components/ui/ActionMenu'
 
+type DepartmentWithCount = Department & {
+  memberCount: number
+}
+
 export default function DepartmentsPage() {
-  const [departments, setDepartments] = useState<Department[]>([])
+  const [departments, setDepartments] = useState<DepartmentWithCount[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -58,7 +62,30 @@ export default function DepartmentsPage() {
         .order('name')
 
       if (deptsError) throw deptsError
-      setDepartments(depts || [])
+
+      // Fetch member counts per department
+      const { data: members } = await supabase
+        .from('organization_members')
+        .select('department_id')
+        .eq('org_id', membership.org_id)
+
+      // Count members per department
+      const memberCounts: Record<string, number> = {}
+      if (members) {
+        members.forEach(member => {
+          if (member.department_id) {
+            memberCounts[member.department_id] = (memberCounts[member.department_id] || 0) + 1
+          }
+        })
+      }
+
+      // Combine departments with member counts
+      const deptsWithCounts: DepartmentWithCount[] = (depts || []).map(dept => ({
+        ...dept,
+        memberCount: memberCounts[dept.id] || 0
+      }))
+
+      setDepartments(deptsWithCounts)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load departments')
     } finally {
@@ -85,7 +112,7 @@ export default function DepartmentsPage() {
 
       if (createError) throw createError
 
-      setDepartments([...departments, data].sort((a, b) => a.name.localeCompare(b.name)))
+      setDepartments([...departments, { ...data, memberCount: 0 }].sort((a, b) => a.name.localeCompare(b.name)))
       setNewDeptName('')
       setSuccess('Department created successfully')
       setTimeout(() => setSuccess(null), 3000)
@@ -219,6 +246,9 @@ export default function DepartmentsPage() {
                   Department Name
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Members
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created
                 </th>
                 <th scope="col" className="relative px-6 py-3">
@@ -229,7 +259,7 @@ export default function DepartmentsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {departments.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-sm text-gray-500">
+                  <td colSpan={4} className="px-6 py-12 text-center text-sm text-gray-500">
                     No departments yet. Add your first department above.
                   </td>
                 </tr>
@@ -247,6 +277,13 @@ export default function DepartmentsPage() {
                           <div className="text-sm font-medium text-gray-900">{dept.name}</div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        dept.memberCount > 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {dept.memberCount} {dept.memberCount === 1 ? 'member' : 'members'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(dept.created_at).toLocaleDateString()}
@@ -294,7 +331,7 @@ export default function DepartmentsPage() {
                     <div className="ml-3">
                       <div className="text-sm font-medium text-gray-900">{dept.name}</div>
                       <div className="text-xs text-gray-500">
-                        Created {new Date(dept.created_at).toLocaleDateString()}
+                        {dept.memberCount} {dept.memberCount === 1 ? 'member' : 'members'} • Created {new Date(dept.created_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>

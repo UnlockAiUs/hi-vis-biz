@@ -13,6 +13,8 @@ interface OrgMember {
   name: string
   jobTitle: string
   departmentName: string | null
+  hasDirectReports: boolean
+  canViewReports: boolean
 }
 
 interface TreeNode {
@@ -82,16 +84,30 @@ export default function OrgChartPage() {
 
       const deptMap = new Map(departments?.map(d => [d.id, d.name]) || [])
 
-      // Get user profiles for names
+      // Get user profiles for names (fallback if display_name not set)
       const enrichedMembers: OrgMember[] = []
       for (const member of membersData || []) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('profile_json')
-          .eq('user_id', member.user_id)
-          .single()
+        // First use display_name and job_title from organization_members
+        let name = member.display_name
+        let jobTitle = member.job_title
 
-        const profileJson = profile?.profile_json as Record<string, unknown> | null
+        // Fallback to user_profiles if not set
+        if (!name || !jobTitle) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('profile_json')
+            .eq('user_id', member.user_id)
+            .single()
+
+          const profileJson = profile?.profile_json as Record<string, unknown> | null
+          
+          if (!name) {
+            name = (profileJson?.name as string) || 'Unknown Member'
+          }
+          if (!jobTitle) {
+            jobTitle = (profileJson?.role_summary as string) || member.level || 'Team Member'
+          }
+        }
         
         enrichedMembers.push({
           id: member.id,
@@ -100,9 +116,11 @@ export default function OrgChartPage() {
           department_id: member.department_id,
           supervisor_user_id: member.supervisor_user_id,
           status: member.status,
-          name: (profileJson?.name as string) || 'Unknown Member',
-          jobTitle: (profileJson?.role_summary as string) || member.level || 'Team Member',
-          departmentName: member.department_id ? deptMap.get(member.department_id) || null : null
+          name: name || 'Unknown Member',
+          jobTitle: jobTitle || 'Team Member',
+          departmentName: member.department_id ? deptMap.get(member.department_id) || null : null,
+          hasDirectReports: member.has_direct_reports || false,
+          canViewReports: member.can_view_reports || false
         })
       }
 
@@ -151,10 +169,11 @@ export default function OrgChartPage() {
     const topLevel = childrenMap.get(null) || []
     
     for (const member of topLevel) {
-      // Check if this member has any direct reports
-      const hasReports = childrenMap.has(member.user_id)
+      // Check if this member has any direct reports (actual or marked)
+      const hasReportsAssigned = childrenMap.has(member.user_id)
       
-      if (hasReports || member.level === 'exec' || member.level === 'manager') {
+      // Use hasDirectReports flag or actual assigned reports to determine if manager
+      if (hasReportsAssigned || member.hasDirectReports || member.level === 'exec' || member.level === 'manager') {
         roots.push(buildNode(member))
       } else {
         unassigned.push(member)
@@ -165,8 +184,8 @@ export default function OrgChartPage() {
     for (const member of members) {
       if (member.supervisor_user_id && !memberMap.has(member.supervisor_user_id)) {
         // Supervisor doesn't exist in org, treat as root
-        const hasReports = childrenMap.has(member.user_id)
-        if (hasReports || member.level === 'exec' || member.level === 'manager') {
+        const hasReportsAssigned = childrenMap.has(member.user_id)
+        if (hasReportsAssigned || member.hasDirectReports || member.level === 'exec' || member.level === 'manager') {
           roots.push(buildNode(member))
         } else {
           unassigned.push(member)
@@ -174,12 +193,19 @@ export default function OrgChartPage() {
       }
     }
 
-    // Sort roots by level (exec first, then manager, then ic)
-    const levelOrder = { exec: 0, manager: 1, ic: 2 }
+    // Sort roots: those with hasDirectReports first, then by level, then alphabetically
     roots.sort((a, b) => {
+      // First sort by hasDirectReports
+      if (a.member.hasDirectReports !== b.member.hasDirectReports) {
+        return a.member.hasDirectReports ? -1 : 1
+      }
+      // Then by level
+      const levelOrder = { exec: 0, manager: 1, ic: 2 }
       const orderA = levelOrder[a.member.level as keyof typeof levelOrder] ?? 2
       const orderB = levelOrder[b.member.level as keyof typeof levelOrder] ?? 2
-      return orderA - orderB
+      if (orderA !== orderB) return orderA - orderB
+      // Then alphabetically
+      return a.member.name.localeCompare(b.member.name)
     })
 
     setTreeRoots(roots)
@@ -244,6 +270,16 @@ export default function OrgChartPage() {
                   <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getLevelBadgeColor(node.member.level)}`}>
                     {node.member.level.toUpperCase()}
                   </span>
+                  {node.member.hasDirectReports && (
+                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                      Manager
+                    </span>
+                  )}
+                  {node.member.canViewReports && (
+                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                      Reports
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-gray-500 truncate">{node.member.jobTitle}</p>
                 {node.member.departmentName && (
@@ -329,11 +365,19 @@ export default function OrgChartPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">MANAGER</span>
-          <span className="text-gray-500">Manager</span>
+          <span className="text-gray-500">Manager Level</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-800">IC</span>
           <span className="text-gray-500">Individual Contributor</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">Manager</span>
+          <span className="text-gray-500">Has Direct Reports</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">Reports</span>
+          <span className="text-gray-500">Can View Reports</span>
         </div>
       </div>
 
@@ -372,11 +416,16 @@ export default function OrgChartPage() {
                     {member.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-medium text-gray-900 truncate">{member.name}</h3>
                       <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getLevelBadgeColor(member.level)}`}>
                         {member.level.toUpperCase()}
                       </span>
+                      {member.hasDirectReports && (
+                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                          Manager
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500 truncate">{member.jobTitle}</p>
                   </div>
