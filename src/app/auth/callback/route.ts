@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const supabase = await createClient()
   let error = null
   let isInvite = type === 'invite'
-  let authResult: { data: { user: { id: string; email?: string } | null }; error: Error | null } | null = null
+  let authUser: { id: string; email?: string } | null = null
 
   // Handle tokens passed as query params (some Supabase configurations)
   if (access_token && refresh_token) {
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       refresh_token,
     })
     error = result.error
-    authResult = result as typeof authResult
+    authUser = result.data?.user ?? null
   }
   // Handle invite/recovery/signup flows (uses token_hash)
   else if (token_hash && type) {
@@ -32,19 +32,19 @@ export async function GET(request: Request) {
       type: type as 'invite' | 'recovery' | 'signup' | 'email',
     })
     error = result.error
-    authResult = result as typeof authResult
+    authUser = result.data?.user ?? null
   }
   // Handle OAuth/PKCE flows (uses code)
   else if (code) {
     const result = await supabase.auth.exchangeCodeForSession(code)
     error = result.error
-    authResult = result as typeof authResult
+    authUser = result.data?.user ?? null
   }
   
   if (!error) {
     // For invite users, link auth user to existing organization_members record
-    if (isInvite && authResult?.data?.user) {
-      const user = authResult.data.user
+    if (isInvite && authUser) {
+      const user = authUser
       const userEmail = user.email
       
       if (userEmail) {
