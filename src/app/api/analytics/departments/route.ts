@@ -25,7 +25,7 @@ export async function GET() {
   // Get user's organization membership (must be admin or owner)
   const { data: membership, error: memberError } = await supabase
     .from('organization_members')
-    .select('organization_id, role')
+    .select('org_id, role')
     .eq('user_id', user.id)
     .in('role', ['owner', 'admin'])
     .single()
@@ -34,14 +34,14 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authorized to view analytics' }, { status: 403 })
   }
   
-  const orgId = membership.organization_id
+  const orgId = membership.org_id
   
   try {
     // Get all departments
     const { data: departments } = await supabase
       .from('departments')
       .select('id, name')
-      .eq('organization_id', orgId)
+      .eq('org_id', orgId)
       .order('name')
     
     if (!departments || departments.length === 0) {
@@ -52,8 +52,7 @@ export async function GET() {
     const { data: members } = await supabase
       .from('organization_members')
       .select('id, user_id, department_id')
-      .eq('organization_id', orgId)
-      .eq('is_active', true)
+      .eq('org_id', orgId)
     
     // Get user profiles
     const userIds = members?.map(m => m.user_id).filter(Boolean) || []

@@ -14,7 +14,7 @@ export async function GET() {
   // Get user's organization membership (must be admin or owner)
   const { data: membership, error: memberError } = await supabase
     .from('organization_members')
-    .select('organization_id, role')
+    .select('org_id, role')
     .eq('user_id', user.id)
     .in('role', ['owner', 'admin'])
     .single()
@@ -23,15 +23,14 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authorized to view analytics' }, { status: 403 })
   }
   
-  const orgId = membership.organization_id
+  const orgId = membership.org_id
   
   try {
     // Get all org members
     const { data: members } = await supabase
       .from('organization_members')
       .select('id, user_id')
-      .eq('organization_id', orgId)
-      .eq('is_active', true)
+      .eq('org_id', orgId)
     
     const memberIds = members?.map(m => m.id) || []
     const userIds = members?.map(m => m.user_id) || []

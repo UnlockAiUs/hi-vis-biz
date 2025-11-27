@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     // Check if user already has an organization
     const { data: existingMembership } = await supabaseAdmin
       .from('organization_members')
-      .select('organization_id')
+      .select('org_id')
       .eq('user_id', user.id)
       .single()
     
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     const { error: ownerError } = await supabaseAdmin
       .from('organization_members')
       .insert({
-        organization_id: org.id,
+        org_id: org.id,
         user_id: user.id,
         role: 'owner',
         display_name: user.email?.split('@')[0] || 'Owner',
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
       const { data: deptData, error: deptError } = await supabaseAdmin
         .from('departments')
         .insert({
-          organization_id: org.id,
+          org_id: org.id,
           name: dept.name,
         })
         .select()
@@ -171,7 +171,7 @@ export async function POST(request: Request) {
       const { data: memberData, error: memberError } = await supabaseAdmin
         .from('organization_members')
         .insert({
-          organization_id: org.id,
+          org_id: org.id,
           department_id: deptId,
           user_id: null, // Will be set when user accepts invite
           role: 'member',
