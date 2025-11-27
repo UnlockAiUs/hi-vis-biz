@@ -5,12 +5,13 @@
  * ╚═══════════════════════════════════════════════════════════════════════════════╝
  * 
  * FILE: src/app/admin/page.tsx
- * PURPOSE: Admin dashboard - Today's dots, participation, themes, quick actions
+ * PURPOSE: Admin dashboard - Today's dots, participation, themes, early warnings, quick actions
  * EXPORTS: default AdminDashboardPage (server component)
  * 
  * LOGIC:
  * - No org membership → redirect to /admin/setup
  * - Shows "Today" section: Dots today, participation rate, top themes
+ * - Shows "Early Warning Signals" when friction keywords or participation drops detected
  * - Stats: total members, active members, departments
  * - Quick action cards for common tasks
  * - Getting started guide for new orgs
@@ -63,6 +64,12 @@ export default async function AdminDashboardPage() {
   const weekEnd = new Date(weekStart)
   weekEnd.setDate(weekStart.getDate() + 7)
 
+  // Get last week's date range for comparison
+  const lastWeekStart = new Date(weekStart)
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7)
+  const lastWeekEnd = new Date(lastWeekStart)
+  lastWeekEnd.setDate(lastWeekStart.getDate() + 7)
+
   // Get stats
   const [
     { count: totalMembers },
@@ -70,7 +77,10 @@ export default async function AdminDashboardPage() {
     { count: departments },
     { data: todaysSessions },
     { data: weekSessions },
+    { data: lastWeekSessions },
     { data: recentAnswers },
+    { data: departmentsList },
+    { data: membersByDept },
   ] = await Promise.all([
     supabase
       .from('organization_members')
@@ -95,18 +105,36 @@ export default async function AdminDashboardPage() {
     // This week's sessions
     supabase
       .from('sessions')
-      .select('id, completed_at')
+      .select('id, completed_at, user_id')
       .eq('org_id', orgId)
       .gte('scheduled_for', weekStart.toISOString())
       .lt('scheduled_for', weekEnd.toISOString()),
-    // Recent answers for theme extraction (last 50)
+    // Last week's sessions for comparison
+    supabase
+      .from('sessions')
+      .select('id, completed_at, user_id')
+      .eq('org_id', orgId)
+      .gte('scheduled_for', lastWeekStart.toISOString())
+      .lt('scheduled_for', lastWeekEnd.toISOString()),
+    // Recent answers for theme extraction and warning signals (last 100)
     supabase
       .from('answers')
-      .select('structured_output')
+      .select('structured_output, created_at')
       .eq('org_id', orgId)
       .not('structured_output', 'is', null)
       .order('created_at', { ascending: false })
-      .limit(50),
+      .limit(100),
+    // Get departments list
+    supabase
+      .from('departments')
+      .select('id, name')
+      .eq('org_id', orgId),
+    // Get members by department for participation tracking
+    supabase
+      .from('organization_members')
+      .select('user_id, department_id')
+      .eq('org_id', orgId)
+      .eq('status', 'active'),
   ])
 
   // Calculate today's dots
@@ -154,6 +182,111 @@ export default async function AdminDashboardPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
     .map(([theme]) => theme.charAt(0).toUpperCase() + theme.slice(1))
+
+  // ========== EARLY WARNING SIGNALS ==========
+  const warnings: Array<{ type: 'friction' | 'participation'; message: string; severity: 'high' | 'medium' | 'low' }> = []
+
+  // 1. Detect warning keywords in recent answers
+  const warningKeywords = ['blocked', 'delay', 'waiting', 'stuck', 'slow', 'problem', 'issue', 'frustrated', 'bottleneck', 'backlog']
+  const warningMentions: Record<string, number> = {}
+  
+  recentAnswers?.forEach(answer => {
+    const output = answer.structured_output as Record<string, unknown>
+    if (!output) return
+    
+    // Check pain_scanner reasons
+    if (output.reason && typeof output.reason === 'string') {
+      const reasonLower = output.reason.toLowerCase()
+      warningKeywords.forEach(keyword => {
+        if (reasonLower.includes(keyword)) {
+          warningMentions[keyword] = (warningMentions[keyword] || 0) + 1
+        }
+      })
+    }
+    
+    // Check any text fields for warning signals
+    const checkText = (text: unknown) => {
+      if (typeof text === 'string') {
+        const textLower = text.toLowerCase()
+        warningKeywords.forEach(keyword => {
+          if (textLower.includes(keyword)) {
+            warningMentions[keyword] = (warningMentions[keyword] || 0) + 1
+          }
+        })
+      }
+    }
+    
+    checkText(output.current_blockers)
+    checkText(output.friction_point)
+    checkText(output.notes)
+  })
+
+  // Add friction warnings if keywords appear 3+ times
+  const significantWarnings = Object.entries(warningMentions)
+    .filter(([, count]) => count >= 3)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+
+  significantWarnings.forEach(([keyword, count]) => {
+    warnings.push({
+      type: 'friction',
+      message: `"${keyword}" mentioned ${count} times in recent check-ins`,
+      severity: count >= 5 ? 'high' : 'medium'
+    })
+  })
+
+  // 2. Detect participation drops by department
+  if (departmentsList && membersByDept && weekSessions && lastWeekSessions) {
+    const deptMap = new Map(departmentsList.map(d => [d.id, d.name]))
+    
+    // Get user to department mapping
+    const userToDept: Record<string, string> = {}
+    membersByDept.forEach(m => {
+      if (m.department_id) {
+        userToDept[m.user_id] = m.department_id
+      }
+    })
+
+    // Count completions this week by department
+    const thisWeekByDept: Record<string, number> = {}
+    weekSessions.forEach(s => {
+      if (s.completed_at && s.user_id && userToDept[s.user_id]) {
+        const deptId = userToDept[s.user_id]
+        thisWeekByDept[deptId] = (thisWeekByDept[deptId] || 0) + 1
+      }
+    })
+
+    // Count completions last week by department
+    const lastWeekByDept: Record<string, number> = {}
+    lastWeekSessions.forEach(s => {
+      if (s.completed_at && s.user_id && userToDept[s.user_id]) {
+        const deptId = userToDept[s.user_id]
+        lastWeekByDept[deptId] = (lastWeekByDept[deptId] || 0) + 1
+      }
+    })
+
+    // Check for significant drops (>30% decrease)
+    Object.keys(lastWeekByDept).forEach(deptId => {
+      const lastWeek = lastWeekByDept[deptId] || 0
+      const thisWeek = thisWeekByDept[deptId] || 0
+      const deptName = deptMap.get(deptId) || 'Unknown'
+      
+      if (lastWeek >= 3 && thisWeek < lastWeek * 0.7) {
+        const dropPercent = Math.round((1 - thisWeek / lastWeek) * 100)
+        warnings.push({
+          type: 'participation',
+          message: `${deptName}: participation down ${dropPercent}% from last week`,
+          severity: dropPercent >= 50 ? 'high' : 'medium'
+        })
+      }
+    })
+  }
+
+  // Sort warnings by severity
+  warnings.sort((a, b) => {
+    const severityOrder = { high: 0, medium: 1, low: 2 }
+    return severityOrder[a.severity] - severityOrder[b.severity]
+  })
 
   const stats = [
     {
@@ -252,6 +385,49 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* Early Warning Signals */}
+      {warnings.length > 0 && (
+        <div className="mb-8 bg-orange-50 border border-orange-200 rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-orange-800 mb-4 flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            Early Warning Signals
+          </h2>
+          <div className="space-y-3">
+            {warnings.slice(0, 4).map((warning, index) => (
+              <div 
+                key={index}
+                className={`flex items-start p-3 rounded-lg ${
+                  warning.severity === 'high' 
+                    ? 'bg-red-100 border border-red-200' 
+                    : 'bg-orange-100 border border-orange-200'
+                }`}
+              >
+                <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 mr-3 ${
+                  warning.severity === 'high' ? 'bg-red-500' : 'bg-orange-500'
+                }`} />
+                <div>
+                  <p className={`text-sm font-medium ${
+                    warning.severity === 'high' ? 'text-red-800' : 'text-orange-800'
+                  }`}>
+                    {warning.type === 'friction' ? '⚠️ Friction Signal' : '📉 Participation Drop'}
+                  </p>
+                  <p className={`text-sm ${
+                    warning.severity === 'high' ? 'text-red-700' : 'text-orange-700'
+                  }`}>
+                    {warning.message}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-xs text-orange-600">
+            These signals are detected from recent check-ins. Investigate to prevent issues.
+          </p>
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
         {stats.map((stat) => (
@@ -318,18 +494,18 @@ export default async function AdminDashboardPage() {
           </Link>
 
           <Link
-            href="/admin/analytics"
+            href="/admin/workflows"
             className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
           >
             <div className="flex-shrink-0 text-orange-500">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
               <span className="absolute inset-0" aria-hidden="true" />
-              <p className="text-sm font-medium text-gray-900">Analytics</p>
-              <p className="text-sm text-gray-500">View insights</p>
+              <p className="text-sm font-medium text-gray-900">Workflows</p>
+              <p className="text-sm text-gray-500">View processes</p>
             </div>
           </Link>
 
