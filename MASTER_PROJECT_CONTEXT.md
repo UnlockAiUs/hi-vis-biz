@@ -212,7 +212,8 @@ VizDots Terminology:
 | File | Purpose | Key Logic |
 |------|---------|-----------|
 | `src/app/dashboard/layout.tsx` | Dashboard layout wrapper | Auth check, navigation structure |
-| `src/app/dashboard/page.tsx` | Employee main dashboard | Lists pending/completed sessions, profile summary |
+| `src/app/dashboard/page.tsx` | Employee main dashboard | Lists pending/completed sessions, profile summary, link to My Dots |
+| `src/app/dashboard/my-dots/page.tsx` | \"My Dots\" history page | Shows all completed check-ins with color-coded dots, stats, themes |
 | `src/app/dashboard/session/[id]/page.tsx` | Micro-session chat interface | Real-time AI conversation, message input/display |
 
 ### Admin Pages
@@ -418,9 +419,10 @@ After auth success:
 - [x] `src/app/auth/set-password/page.tsx`
 - [x] `src/app/auth/auth-code-error/page.tsx`
 
-### ✅ Dashboard Pages (3 files)
+### ✅ Dashboard Pages (4 files)
 - [x] `src/app/dashboard/layout.tsx`
 - [x] `src/app/dashboard/page.tsx`
+- [x] `src/app/dashboard/my-dots/page.tsx`
 - [x] `src/app/dashboard/session/[id]/page.tsx`
 
 ### ✅ Admin Pages (10 files)
@@ -519,3 +521,12 @@ find supabase/migrations -name "*.sql" | wc -l
   - Updated support email: support@vizdots.com
   - Version bumped to 1.2.0
   - Status: REBRAND COMPLETE
+2025-11-27 cline - Added My Dots page (Phase 2 Employee Flow):
+  - Created src/app/dashboard/my-dots/page.tsx
+  - Shows all completed sessions (dots) with color-coded indicators by agent type
+  - Displays stats: Total Dots, This Week, This Month
+  - Extracts and displays top themes from recent answers
+  - Info card explaining "What are dots?"
+  - Updated src/app/dashboard/page.tsx with link to My Dots
+  - File count: 61 → 62 TypeScript/TSX files
+  - Phase 2 progress: Employee Flow Improvements - My Dots COMPLETE

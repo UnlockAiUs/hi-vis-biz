@@ -307,6 +307,12 @@ export default async function DashboardPage() {
                 <p className="text-xs text-gray-500">Profile version</p>
               </div>
             </div>
+            <Link
+              href="/dashboard/my-dots"
+              className="mt-4 block text-center text-sm text-yellow-600 hover:text-yellow-700 font-medium"
+            >
+              View all your dots →
+            </Link>
           </div>
         </div>
       </div>
