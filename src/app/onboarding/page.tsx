@@ -5,22 +5,20 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Department, OrganizationMember } from '@/types/database'
 
-interface MemberWithEmail extends OrganizationMember {
-  email?: string
+interface EnhancedMember extends OrganizationMember {
+  department?: Department | null
 }
 
 export default function OnboardingPage() {
   const [name, setName] = useState('')
   const [jobTitle, setJobTitle] = useState('')
   const [departmentId, setDepartmentId] = useState('')
-  const [supervisorId, setSupervisorId] = useState('')
-  const [location, setLocation] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
   const [departments, setDepartments] = useState<Department[]>([])
-  const [potentialSupervisors, setPotentialSupervisors] = useState<MemberWithEmail[]>([])
-  const [membership, setMembership] = useState<OrganizationMember | null>(null)
+  const [membership, setMembership] = useState<EnhancedMember | null>(null)
+  const [isPreFilled, setIsPreFilled] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -35,10 +33,10 @@ export default function OnboardingPage() {
           return
         }
 
-        // Get user's organization membership
+        // Get user's organization membership with department
         const { data: memberData, error: memberError } = await supabase
           .from('organization_members')
-          .select('*')
+          .select('*, department:departments(*)')
           .eq('user_id', user.id)
           .single()
 
@@ -48,9 +46,21 @@ export default function OnboardingPage() {
           return
         }
 
-        setMembership(memberData)
+        setMembership(memberData as EnhancedMember)
 
-        // Check if user already has a profile
+        // Pre-fill from organization_members data (from enhanced onboarding)
+        if (memberData.display_name) {
+          setName(memberData.display_name)
+          setIsPreFilled(true)
+        }
+        if (memberData.job_title) {
+          setJobTitle(memberData.job_title)
+        }
+        if (memberData.department_id) {
+          setDepartmentId(memberData.department_id)
+        }
+
+        // Check if user already has a completed profile
         const { data: profileData } = await supabase
           .from('user_profiles')
           .select('*')
@@ -73,40 +83,6 @@ export default function OnboardingPage() {
           .order('name')
 
         setDepartments(deptData || [])
-
-        // Load potential managers (all active members in the same org, excluding self)
-        const { data: membersData } = await supabase
-          .from('organization_members')
-          .select('*')
-          .eq('org_id', memberData.org_id)
-          .eq('status', 'active')
-          .neq('user_id', user.id)
-
-        // Fetch names for potential managers
-        if (membersData && membersData.length > 0) {
-          const membersWithNames: MemberWithEmail[] = []
-          for (const member of membersData) {
-            // Get user profile to find their name
-            const { data: profileData } = await supabase
-              .from('user_profiles')
-              .select('profile_json')
-              .eq('user_id', member.user_id)
-              .single()
-            
-            const profileJson = profileData?.profile_json as Record<string, unknown> | null
-            const profileName = profileJson?.name as string | null
-            const roleTitle = profileJson?.role_summary as string | null
-
-            membersWithNames.push({
-              ...member,
-              email: profileName || `Team Member (${member.level})`
-            })
-          }
-          // Sort by name for easier selection
-          membersWithNames.sort((a, b) => (a.email || '').localeCompare(b.email || ''))
-          setPotentialSupervisors(membersWithNames)
-        }
-
         setChecking(false)
       } catch (err) {
         console.error('Error loading data:', err)
@@ -156,7 +132,6 @@ export default function OnboardingPage() {
       const profileJson = {
         name: name.trim(),
         role_summary: jobTitle.trim(),
-        location: location.trim() || undefined,
         primary_duties: [],
         customer_facing: false,
         main_workflows: [],
@@ -214,14 +189,12 @@ export default function OnboardingPage() {
         }
       }
 
-      // Update organization_members with department and supervisor
+      // Update organization_members with any edits (name, title, department)
       const memberUpdate: Record<string, unknown> = {
         department_id: departmentId,
+        display_name: name.trim(),
+        job_title: jobTitle.trim(),
         updated_at: new Date().toISOString()
-      }
-
-      if (supervisorId) {
-        memberUpdate.supervisor_user_id = supervisorId
       }
 
       const { error: memberError } = await supabase
@@ -234,7 +207,45 @@ export default function OnboardingPage() {
         // Don't fail the whole operation, just log it
       }
 
-      // Redirect to dashboard
+      // Check for existing sessions
+      const { data: existingSessions, error: sessionsError } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1)
+
+      if (!sessionsError && (!existingSessions || existingSessions.length === 0)) {
+        // Create initial session with role_mapper agent
+        const { data: roleMapperAgent } = await supabase
+          .from('agents')
+          .select('id')
+          .eq('slug', 'role_mapper')
+          .single()
+
+        if (roleMapperAgent) {
+          const { data: newSession, error: sessionError } = await supabase
+            .from('sessions')
+            .insert({
+              user_id: user.id,
+              agent_id: roleMapperAgent.id,
+              status: 'active',
+              summary_json: {
+                title: 'Initial Role Mapping',
+                started: new Date().toISOString()
+              }
+            })
+            .select('id')
+            .single()
+
+          if (!sessionError && newSession) {
+            // Redirect to the new session
+            router.push(`/dashboard/session/${newSession.id}`)
+            return
+          }
+        }
+      }
+
+      // If we have existing sessions or couldn't create one, go to dashboard
       router.push('/dashboard')
     } catch (err) {
       console.error('Onboarding error:', err)
@@ -264,10 +275,13 @@ export default function OnboardingPage() {
             </svg>
           </div>
           <h2 className="text-3xl font-extrabold text-gray-900">
-            Complete Your Profile
+            {isPreFilled ? 'Confirm Your Information' : 'Complete Your Profile'}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Help us understand your role so we can personalize your experience
+            {isPreFilled 
+              ? 'Your administrator has pre-filled some details. Please review and confirm.'
+              : 'Help us understand your role so we can personalize your experience'
+            }
           </p>
         </div>
 
@@ -276,6 +290,13 @@ export default function OnboardingPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
                 {error}
+              </div>
+            )}
+
+            {isPreFilled && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded text-sm">
+                <p className="font-medium">Information pre-filled by your administrator</p>
+                <p className="mt-1 text-blue-600">You can edit any fields if needed.</p>
               </div>
             )}
 
@@ -338,53 +359,39 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                Location <span className="text-gray-400">(optional)</span>
-              </label>
-              <input
-                id="location"
-                name="location"
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
-                placeholder="New York, NY"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="supervisor" className="block text-sm font-medium text-gray-700">
-                Who is your direct manager? <span className="text-gray-400">(optional)</span>
-              </label>
-              <select
-                id="supervisor"
-                name="supervisor"
-                value={supervisorId}
-                onChange={(e) => setSupervisorId(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
-              >
-                <option value="">I&apos;ll set this later</option>
-                {potentialSupervisors.map((member) => (
-                  <option key={member.id} value={member.user_id}>
-                    {member.email}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-gray-500">
-                Select the person you report to directly. You can update this anytime.
-              </p>
-            </div>
-
-            <div>
               <button
                 type="submit"
                 disabled={loading || departments.length === 0}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Saving...' : 'Complete Setup'}
+                {loading ? 'Saving...' : isPreFilled ? 'Confirm & Start First Session' : 'Complete Setup'}
               </button>
             </div>
           </form>
+        </div>
+
+        <div className="mt-6 bg-gray-100 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-gray-900 mb-2">What happens next?</h3>
+          <ul className="text-sm text-gray-600 space-y-1">
+            <li className="flex items-start">
+              <svg className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Complete a quick role mapping session (~3 min)</span>
+            </li>
+            <li className="flex items-start">
+              <svg className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Get personalized AI recommendations</span>
+            </li>
+            <li className="flex items-start">
+              <svg className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Access your personalized dashboard</span>
+            </li>
+          </ul>
         </div>
 
         <p className="mt-4 text-center text-xs text-gray-500">
