@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     if (orgError || !org) {
       console.error('Error creating organization:', orgError)
       return NextResponse.json(
-        { error: 'Failed to create organization' },
+        { error: `Failed to create organization: ${orgError?.message || 'Unknown error'}` },
         { status: 500 }
       )
     }
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
       // Try to cleanup
       await supabaseAdmin.from('organizations').delete().eq('id', org.id)
       return NextResponse.json(
-        { error: 'Failed to add organization owner' },
+        { error: `Failed to add organization owner: ${ownerError.message}` },
         { status: 500 }
       )
     }
@@ -190,7 +190,7 @@ export async function POST(request: Request) {
         employeeResults.push({
           email: emp.email,
           success: false,
-          error: 'Failed to create member record',
+          error: `Failed to create member record: ${memberError.message}`,
         })
         continue
       }
