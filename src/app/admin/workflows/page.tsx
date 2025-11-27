@@ -113,7 +113,9 @@ export default async function WorkflowsPage() {
 
     // Check if this is a workflow_mapper output
     if (output.workflow_name && output.steps && Array.isArray(output.steps)) {
-      const session = answer.session as { user_id: string; agent_code: string } | null
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sessionRaw = answer.session as any
+      const session = Array.isArray(sessionRaw) ? sessionRaw[0] : sessionRaw
       if (!session || session.agent_code !== 'workflow_mapper') return
 
       const workflowKey = `${output.workflow_name}-${session.user_id}`
