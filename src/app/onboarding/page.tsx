@@ -30,6 +30,7 @@ interface EnhancedMember extends OrganizationMember {
 }
 
 export default function OnboardingPage() {
+  const [step, setStep] = useState<'welcome' | 'form'>('welcome')
   const [name, setName] = useState('')
   const [jobTitle, setJobTitle] = useState('')
   const [departmentId, setDepartmentId] = useState('')
@@ -39,6 +40,7 @@ export default function OnboardingPage() {
   const [departments, setDepartments] = useState<Department[]>([])
   const [membership, setMembership] = useState<EnhancedMember | null>(null)
   const [isPreFilled, setIsPreFilled] = useState(false)
+  const [orgName, setOrgName] = useState<string>('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -69,6 +71,17 @@ export default function OnboardingPage() {
         }
 
         setMembership(memberData as EnhancedMember)
+
+        // Get organization name for welcome screen
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('name')
+          .eq('id', memberData.org_id)
+          .single()
+        
+        if (orgData?.name) {
+          setOrgName(orgData.name)
+        }
 
         // Pre-fill from organization_members data (from enhanced onboarding)
         if (memberData.display_name) {
@@ -282,6 +295,94 @@ export default function OnboardingPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Welcome screen for first-time employees
+  if (step === 'welcome' && error !== 'NO_ORG_MEMBERSHIP') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-yellow-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md mx-auto text-center">
+          {/* VizDots Logo/Icon */}
+          <div className="mx-auto h-20 w-20 bg-yellow-500 rounded-2xl flex items-center justify-center mb-8 shadow-lg">
+            <svg className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Welcome to VizDots! 👋
+          </h1>
+
+          {orgName && (
+            <p className="text-lg text-yellow-600 font-medium mb-6">
+              You've been invited to join {orgName}
+            </p>
+          )}
+
+          {/* Key value props */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 text-left">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Here's how it works:
+            </h2>
+            <ul className="space-y-4">
+              <li className="flex items-start">
+                <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-yellow-600 font-bold text-sm">1</span>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Quick 1-minute check-ins</p>
+                  <p className="text-sm text-gray-600">A few times a week, you'll answer short questions about your work.</p>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-yellow-600 font-bold text-sm">2</span>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Each response = a "dot"</p>
+                  <p className="text-sm text-gray-600">Every dot is a small clue about workflows, roadblocks, and wins.</p>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-yellow-600 font-bold text-sm">3</span>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">VizDots connects the dots</p>
+                  <p className="text-sm text-gray-600">Your team gets a clear picture of how work really happens.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          {/* Benefits callout */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-left">
+            <div className="flex">
+              <svg className="h-5 w-5 text-blue-400 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="text-sm text-blue-800">
+                  <span className="font-medium">Your answers help your team</span> identify bottlenecks, improve processes, and make work easier for everyone.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <button
+            onClick={() => setStep('form')}
+            className="w-full py-3 px-6 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
+          >
+            Let's Get Started →
+          </button>
+
+          <p className="mt-4 text-xs text-gray-500">
+            Takes less than 2 minutes to set up your profile
+          </p>
         </div>
       </div>
     )
