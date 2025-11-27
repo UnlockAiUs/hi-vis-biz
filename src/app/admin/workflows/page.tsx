@@ -93,10 +93,13 @@ export default async function WorkflowsPage() {
   // Create member lookup
   const memberLookup: Record<string, { name: string; title: string; department: string }> = {}
   members?.forEach(m => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const deptRaw = m.department as any
+    const deptName = Array.isArray(deptRaw) ? deptRaw[0]?.name : deptRaw?.name
     memberLookup[m.user_id] = {
       name: m.display_name || 'Unknown',
       title: m.job_title || 'Team Member',
-      department: (m.department as { name: string })?.name || 'General'
+      department: deptName || 'General'
     }
   })
 
