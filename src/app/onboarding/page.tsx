@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import type { Department, OrganizationMember } from '@/types/database'
 
 interface EnhancedMember extends OrganizationMember {
@@ -41,7 +42,9 @@ export default function OnboardingPage() {
           .single()
 
         if (memberError || !memberData) {
-          setError('You are not associated with any organization. Please contact your administrator.')
+          // This user has no organization membership - they might be a new user
+          // who should be creating their organization, not onboarding as an employee
+          setError('NO_ORG_MEMBERSHIP')
           setChecking(false)
           return
         }
@@ -265,6 +268,62 @@ export default function OnboardingPage() {
     )
   }
 
+  // Special UI for new users who don't have an organization yet
+  if (error === 'NO_ORG_MEMBERSHIP') {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md mx-auto text-center">
+          <div className="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+            <svg className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Welcome to Hi-Vis Biz!
+          </h2>
+          <p className="text-gray-600 mb-8">
+            Looks like you're a new user! Let's set up your organization so you can start getting insights from your team.
+          </p>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <h3 className="font-medium text-gray-900 mb-4">What you'll do:</h3>
+            <ul className="text-left text-sm text-gray-600 space-y-3">
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Create your organization</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Set up departments</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Invite your team members</span>
+              </li>
+            </ul>
+          </div>
+          
+          <Link 
+            href="/admin/setup"
+            className="w-full inline-flex justify-center py-3 px-6 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Create Your Organization
+          </Link>
+          
+          <p className="mt-6 text-sm text-gray-500">
+            Were you invited by someone? Check your email for an invitation link, or contact your administrator.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto">
@@ -287,7 +346,7 @@ export default function OnboardingPage() {
 
         <div className="bg-white py-8 px-6 shadow rounded-lg">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
+          {error && error !== 'NO_ORG_MEMBERSHIP' && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
                 {error}
               </div>

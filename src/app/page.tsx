@@ -59,7 +59,7 @@ export default function HomePage() {
                 See How It Works
               </Link>
             </div>
-            <p className="mt-4 text-sm text-gray-500">No credit card required • Free 14-day trial</p>
+            <p className="mt-4 text-sm text-gray-500">No credit card required • Free 30-day trial</p>
           </div>
         </section>
 

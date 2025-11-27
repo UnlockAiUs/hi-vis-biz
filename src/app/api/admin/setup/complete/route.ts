@@ -68,13 +68,19 @@ export async function POST(request: Request) {
     
     // Start the setup process
     
-    // 1. Create the organization
+    // 1. Create the organization with trial period
+    const trialStartedAt = new Date().toISOString()
+    const trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
+    
     const { data: org, error: orgError } = await supabaseAdmin
       .from('organizations')
       .insert({
         name: organization.name,
         timezone: organization.timezone,
         size_band: organization.sizeBand,
+        trial_started_at: trialStartedAt,
+        trial_ends_at: trialEndsAt,
+        subscription_status: 'trialing',
       })
       .select()
       .single()
@@ -109,6 +115,17 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
+    
+    // 2b. Create owner's user profile
+    await supabaseAdmin
+      .from('user_profiles')
+      .insert({
+        user_id: user.id,
+        profile_json: {
+          name: user.email?.split('@')[0] || 'Owner',
+          role: 'owner',
+        },
+      })
     
     // 3. Create departments
     const departmentMap = new Map<string, string>() // name -> id
