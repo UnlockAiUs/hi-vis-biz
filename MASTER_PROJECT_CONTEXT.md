@@ -23,6 +23,11 @@ rebrand_status: COMPLETE - rebranded from Hi-Vis Biz to VizDots
 3. **VERIFY** your changes align with existing architecture
 4. **NEVER** create duplicate functionality
 5. **FOLLOW** existing patterns exactly
+6. **ALWAYS COMMIT AND PUSH** - After completing any work, you MUST:
+   - `git add -A`
+   - `git commit -m "Descriptive message about changes"`
+   - `git push origin main`
+   - Never leave changes uncommitted or unpushed
 
 ---
 
