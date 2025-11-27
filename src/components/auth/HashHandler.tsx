@@ -1,3 +1,25 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/components/auth/HashHandler.tsx
+ * PURPOSE: Client component to handle auth tokens in URL hash fragment
+ * EXPORTS: default HashHandler component
+ * 
+ * WHY NEEDED: Supabase invite links redirect to /#access_token=...&type=invite
+ * Hash fragments are client-side only, so server can't read them.
+ * 
+ * ROUTING BEHAVIOR:
+ * - type=invite → /auth/set-password
+ * - type=recovery → /auth/set-password
+ * - other → /auth/callback (smart routing)
+ * 
+ * USED IN: src/app/layout.tsx (global, runs on every page)
+ * DEPENDENCIES: @/lib/supabase/client
+ */
+
 'use client'
 
 import { useEffect } from 'react'

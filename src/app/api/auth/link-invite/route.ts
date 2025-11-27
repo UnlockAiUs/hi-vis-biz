@@ -1,3 +1,22 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/auth/link-invite/route.ts
+ * PURPOSE: Links invited users to their organization membership after signup
+ * EXPORTS: POST handler
+ * 
+ * KEY LOGIC:
+ * - Called after user completes invite signup flow
+ * - Finds organization_members record by invited_email where user_id is null
+ * - Links the auth user to that membership record
+ * - Updates status to 'active' and invite_status to 'accepted'
+ * - Uses service role to bypass RLS (needed because user_id was null)
+ * - Returns isNewUser:true if no invited membership found (user needs to create org)
+ */
+
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'

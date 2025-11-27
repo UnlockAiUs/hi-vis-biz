@@ -1,3 +1,23 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/page.tsx
+ * PURPOSE: Admin dashboard - org stats, quick actions, getting started guide
+ * EXPORTS: default AdminDashboardPage (server component)
+ * 
+ * LOGIC:
+ * - No org membership → redirect to /admin/setup
+ * - Shows stats: total members, active members, departments, pending sessions
+ * - Quick action cards for common tasks
+ * - Getting started guide for new orgs
+ * 
+ * DEPENDENCIES: @/lib/supabase/server
+ * TABLES: organization_members, organizations, departments, sessions
+ */
+
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -193,7 +213,7 @@ export default async function AdminDashboardPage() {
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
           <h3 className="text-lg font-medium text-blue-900">Getting Started</h3>
           <p className="mt-1 text-sm text-blue-700">
-            Welcome to Hi-Vis Biz! Here&apos;s how to set up your organization:
+            Welcome to VizDots! Here&apos;s how to set up your organization:
           </p>
           <ol className="mt-4 space-y-2 text-sm text-blue-700">
             <li className="flex items-start">

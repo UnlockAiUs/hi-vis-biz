@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/settings/page.tsx
+ * PURPOSE: Organization settings page - name, timezone, schedule config
+ * EXPORTS: SettingsPage (default)
+ * 
+ * KEY FEATURES:
+ * - Organization name/timezone editing (owner only)
+ * - Weekly schedule configuration (per-day start/end times)
+ * - Copy schedule to weekdays/all days
+ * 
+ * API DEPENDENCIES: /api/admin/settings (PATCH)
+ * DB TABLES: organizations, organization_members
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

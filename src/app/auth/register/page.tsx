@@ -1,3 +1,17 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/auth/register/page.tsx
+ * PURPOSE: Registration page - new org owner signup with email confirmation
+ * EXPORTS: default RegisterPage (client component)
+ * 
+ * FLOW: Register → Email confirmation → /auth/callback → /admin/setup
+ * DEPENDENCIES: @/lib/supabase/client
+ */
+
 'use client'
 
 import { useState } from 'react'
@@ -80,7 +94,7 @@ export default function RegisterPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h1 className="text-center text-3xl font-bold text-gray-900">
-            Hi-Vis Biz
+            VizDots
           </h1>
           <h2 className="mt-6 text-center text-2xl font-semibold text-gray-900">
             Create your account

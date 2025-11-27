@@ -1,8 +1,18 @@
 /**
- * Onboarding Wizard State Management
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
  * 
- * Manages the multi-step onboarding wizard state with localStorage persistence.
- * This allows users to navigate between steps without losing their data.
+ * FILE: src/lib/utils/onboarding-wizard.ts
+ * PURPOSE: Admin onboarding wizard state management with localStorage persistence
+ * EXPORTS:
+ *   - OnboardingState, EmployeeEntry, DepartmentEntry, OrganizationData types
+ *   - loadOnboardingState(), saveOnboardingState(), clearOnboardingState()
+ *   - Validation helpers: isValidEmail, isValidEmployee, isValidOrganization
+ *   - Step navigation: WIZARD_STEPS, getStepPath, canAccessStep, getStepValidation
+ *   - Constants: SIZE_BANDS, TIMEZONES
+ * USED BY: /admin/setup/* wizard pages (5-step org setup flow)
  */
 
 // Types for the onboarding wizard
@@ -49,7 +59,7 @@ export const INITIAL_ONBOARDING_STATE: OnboardingState = {
 }
 
 // localStorage key
-const STORAGE_KEY = 'hivisbiz_onboarding_state'
+const STORAGE_KEY = 'vizdots_onboarding_state'
 
 /**
  * Load onboarding state from localStorage

@@ -1,3 +1,23 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/admin/setup/complete/route.ts
+ * PURPOSE: Final step of 5-step setup wizard - creates org, departments, employees
+ * EXPORTS: POST handler
+ * 
+ * KEY LOGIC:
+ * - Creates organization with 30-day trial (trialing status)
+ * - Adds current user as owner with can_view_reports/has_direct_reports
+ * - Creates departments from wizard data
+ * - Creates organization_members for each employee (user_id=null until invite accepted)
+ * - Sets up supervisor relationships between members
+ * - Sends invitation emails via Supabase Auth admin.inviteUserByEmail()
+ * - Returns summary with success/failure counts
+ */
+
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'

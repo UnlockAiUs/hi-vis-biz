@@ -1,3 +1,22 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/sessions/[id]/messages/route.ts
+ * PURPOSE: Core AI conversation endpoint - processes messages through AI agents
+ * EXPORTS: POST handler
+ * 
+ * KEY LOGIC:
+ * - Handles isOpening=true to get agent's opening message
+ * - Processes user messages through agent.processTurn()
+ * - Builds AgentContext with user profile, membership, supervisor info
+ * - Maintains conversation history in answers.transcript_json
+ * - Auto-marks session started/completed based on conversation state
+ * - Stores extractedData from agent when conversation completes
+ */
+
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getAgent, AgentContext, isValidAgentCode } from '@/lib/ai/agents'

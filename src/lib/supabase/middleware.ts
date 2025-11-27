@@ -1,3 +1,16 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/supabase/middleware.ts
+ * PURPOSE: Session refresh middleware for Supabase Auth
+ * USE: Called by src/middleware.ts on every request
+ * EXPORTS: updateSession(request) - refreshes auth session via cookies
+ * FLOW: Reads cookies → refreshes token if needed → updates response cookies
+ */
+
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 

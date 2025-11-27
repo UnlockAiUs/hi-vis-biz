@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/admin/invite/route.ts
+ * PURPOSE: API endpoint to invite employees via email using Supabase Auth
+ * EXPORTS: POST handler
+ * 
+ * KEY LOGIC:
+ * - Uses Supabase Auth admin.inviteUserByEmail() to send invites
+ * - Creates organization_member records with enhanced onboarding fields
+ * - Handles existing users by adding them directly to org
+ * - Creates initial user_profile for new invites
+ * - Validates admin/owner permission before allowing invite
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 
@@ -46,7 +64,7 @@ export async function POST(request: NextRequest) {
     // Invite user via Supabase Auth
     // Include type=invite in the redirect URL so callback knows to redirect to set-password
     const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://hi-vis-biz.vercel.app'}/auth/callback?type=invite&next=/onboarding`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vizdots.com'}/auth/callback?type=invite&next=/onboarding`,
     })
 
     if (inviteError) {

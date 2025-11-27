@@ -1,3 +1,22 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/ai/agents/index.ts
+ * PURPOSE: Central agent registry and router
+ * EXPORTS:
+ *   - getAgent(code) - returns agent by code
+ *   - getAllAgents() - returns all agents
+ *   - isValidAgentCode(code) - validates agent code
+ *   - processAgentTurn(code, context, message) - processes conversation turn
+ *   - getAgentOpeningMessage(code, context) - gets opening message
+ *   - agentMetadata - UI metadata for agents (name, description, icon)
+ *   - Individual agent exports (pulseAgent, roleMapperAgent, etc.)
+ * AGENTS: pulse, role_mapper, workflow_mapper, pain_scanner, focus_tracker
+ */
+
 // Agent exports and router
 import { Agent, AgentCode, AgentContext, AgentTurnResult, AgentOutput } from './base'
 import { pulseAgent } from './pulse'

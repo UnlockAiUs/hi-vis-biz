@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/analytics/departments/route.ts
+ * PURPOSE: API endpoint for department-level analytics for admin dashboard
+ * EXPORTS: GET handler
+ * 
+ * KEY LOGIC:
+ * - Requires admin/owner role to access
+ * - Calculates per-department: member count, completed sessions, response rate
+ * - Extracts avgMorale/avgWorkload from user_profiles.profile_json.pulse
+ * - Extracts topPainThemes from profile_json.pain_scanner.pain_points
+ * - Includes "Unassigned" virtual department for members without department
+ */
+
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 

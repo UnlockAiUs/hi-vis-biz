@@ -1,3 +1,14 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/org-chart/page.tsx
+ * PURPOSE: Visual org chart showing reporting hierarchy with tree view
+ * TABLES: organization_members, departments, user_profiles
+ * FEATURES: Expandable tree nodes, level badges, manager/reports indicators
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

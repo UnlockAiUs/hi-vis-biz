@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/layout.tsx
+ * PURPOSE: Admin layout wrapper - auth check, sidebar, trial banner
+ * EXPORTS: default AdminLayout (server component)
+ * 
+ * LOGIC:
+ * - No membership → render children only (for /admin/setup)
+ * - Has membership → render with sidebar + trial banner
+ * 
+ * DEPENDENCIES: @/lib/supabase/server, AdminSidebar
+ * TABLES: organization_members, organizations
+ */
+
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'

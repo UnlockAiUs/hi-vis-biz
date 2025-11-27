@@ -1,3 +1,17 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/auth/login/page.tsx
+ * PURPOSE: Login page - email/password auth for returning users
+ * EXPORTS: default LoginPage (client component)
+ * 
+ * FLOW: Login → /dashboard (let callback handle routing)
+ * DEPENDENCIES: @/lib/supabase/client
+ */
+
 'use client'
 
 import { useState } from 'react'
@@ -37,7 +51,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h1 className="text-center text-3xl font-bold text-gray-900">
-            Hi-Vis Biz
+            VizDots
           </h1>
           <h2 className="mt-6 text-center text-2xl font-semibold text-gray-900">
             Sign in to your account

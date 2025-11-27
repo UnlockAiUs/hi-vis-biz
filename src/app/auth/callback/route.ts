@@ -1,3 +1,28 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/auth/callback/route.ts
+ * PURPOSE: Auth callback handler for Supabase auth flows - SMART ROUTING
+ * 
+ * HANDLES:
+ * - OAuth/PKCE flows (code exchange)
+ * - Token-based flows (token_hash)
+ * - Direct token flows (access_token, refresh_token)
+ * - Invite user linking (updates organization_members)
+ * 
+ * SMART ROUTING LOGIC:
+ * 1. Invite users → /auth/set-password
+ * 2. No membership → /admin/setup (new org owner)
+ * 3. Owner/Admin → /admin
+ * 4. Member without profile → /onboarding
+ * 5. Member with profile → /dashboard
+ * 
+ * USES SERVICE ROLE for DB operations (bypasses RLS)
+ */
+
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'

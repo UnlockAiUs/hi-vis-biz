@@ -1,3 +1,22 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/dashboard/session/[id]/page.tsx
+ * PURPOSE: Chat-style AI conversation interface for employee check-ins
+ * EXPORTS: SessionPage (default)
+ * 
+ * KEY LOGIC:
+ * - Loads session data and existing conversation from /api/sessions/[id]
+ * - Gets opening message via POST /api/sessions/[id]/messages with isOpening=true
+ * - Sends user messages via POST /api/sessions/[id]/messages
+ * - Displays chat bubbles with user (right, blue) and assistant (left, white)
+ * - Shows completion status and "Return to Dashboard" when isComplete=true
+ * - Uses agentMetadata for agent icon and description display
+ */
+
 'use client'
 
 import { useState, useEffect, useRef } from 'react'

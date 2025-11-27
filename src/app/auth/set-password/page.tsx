@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/auth/set-password/page.tsx
+ * PURPOSE: Password setup page for invited users after clicking email invite link
+ * EXPORTS: SetPasswordPage (default)
+ * 
+ * KEY LOGIC:
+ * - Extracts access_token/refresh_token from URL hash (Supabase invite flow)
+ * - Validates user session before allowing password set
+ * - Calls supabase.auth.updateUser({ password }) to set password
+ * - Calls /api/auth/link-invite to link user to organization_members record
+ * - Redirects to /onboarding after successful password setup
+ */
+
 'use client'
 
 import { useState, useEffect } from 'react'

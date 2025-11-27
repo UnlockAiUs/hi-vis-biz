@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/types/database.ts
+ * PURPOSE: TypeScript types for Supabase database schema
+ * CONTAINS:
+ *   - Database type with all table definitions (Row, Insert, Update, Relationships)
+ *   - ProfileJson interface: user profile JSONB schema
+ *   - Agent output interfaces: PulseOutput, RoleMapperOutput, WorkflowMapperOutput, PainScannerOutput, FocusTrackerOutput
+ *   - Convenience type aliases: Tables<T>, Insertable<T>, Updatable<T>
+ *   - Entity types: Organization, Department, OrganizationMember, Session, Answer, etc.
+ * REGENERATE: npx supabase gen types typescript --project-id [ID] > src/types/database.ts
+ * WARNING: Manual edits may be overwritten by type generation - add custom types at end
+ */
+
 export type Json =
   | string
   | number

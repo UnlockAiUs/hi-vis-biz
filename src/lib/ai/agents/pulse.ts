@@ -1,3 +1,23 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/ai/agents/pulse.ts
+ * PURPOSE: Pulse Check AI agent - morale, workload, and burnout assessment
+ * EXPORTS: PulseAgent (class), pulseAgent (singleton instance)
+ * 
+ * OUTPUT SCHEMA: { rating: 1-5, reason: string, workload_rating: 1-5, burnout_risk: 'low'|'medium'|'high' }
+ * 
+ * CONVERSATION FLOW:
+ * 1. Opens with friendly question about how work is going
+ * 2. Collects 2 user messages minimum before completing
+ * 3. Extracts structured data via separate LLM call
+ * 
+ * DEPENDENCIES: ../openai, ./base, @/types/database
+ */
+
 import { PulseOutput } from '@/types/database'
 import { createConversation, createChatCompletion } from '../openai'
 import { 

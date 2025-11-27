@@ -1,3 +1,20 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/sessions/route.ts
+ * PURPOSE: Session management API - list, create sessions for micro-check-ins
+ * EXPORTS: GET (list user sessions), POST (create manual session)
+ * 
+ * GET: Returns user's sessions with agent info, filterable by status (pending/completed/all)
+ * POST: Creates manual session with agent_code, optional topic_codes
+ * 
+ * DEPENDENCIES: createClient from @/lib/supabase/server
+ * TABLES: sessions, organization_members, session_topics, agents
+ */
+
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 

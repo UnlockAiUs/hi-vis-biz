@@ -1,3 +1,17 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/utils/profile.ts
+ * PURPOSE: Profile merge utilities for AI agent outputs
+ * EXPORTS:
+ *   - mergeAgentOutputIntoProfile(profile, agentOutput) - merges agent data into user profile
+ *   - updateProfileGaps(profile) - calculates what profile data is still missing
+ * MERGE LOGIC: Each agent type has specific merge rules (pulse->morale, role_mapper->summary, etc.)
+ */
+
 import { ProfileJson, PulseOutput, RoleMapperOutput, WorkflowMapperOutput, PainScannerOutput, FocusTrackerOutput } from '@/types/database'
 import { AgentOutput } from '@/lib/ai/agents'
 

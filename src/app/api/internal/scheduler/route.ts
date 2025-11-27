@@ -1,3 +1,25 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/internal/scheduler/route.ts
+ * PURPOSE: Cron-triggered session scheduler - creates sessions for active users
+ * EXPORTS: POST, GET (both protected by SCHEDULER_SECRET)
+ * 
+ * CALLED BY: Vercel cron (configured in vercel.json)
+ * AUTH: SCHEDULER_SECRET (Bearer token or query param)
+ * 
+ * LOGIC:
+ * - Fetches all active organization_members
+ * - For each member, determines which sessions to schedule via determineSessionsToSchedule()
+ * - Creates sessions with source='autopilot'
+ * 
+ * DEPENDENCIES: @supabase/supabase-js, @/lib/utils/scheduler
+ * TABLES: organization_members, user_profiles, sessions
+ */
+
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { determineSessionsToSchedule, UserSchedulingContext } from '@/lib/utils/scheduler'

@@ -1,3 +1,24 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/setup/review/page.tsx
+ * PURPOSE: Step 5 (final) of setup wizard - Review and submit
+ * EXPORTS: SetupStep5Page (default)
+ * 
+ * KEY FEATURES:
+ * - Summary display of org, departments, employees
+ * - Stats overview (supervisors, can view reports)
+ * - Edit buttons to go back to previous steps
+ * - Submit calls /api/admin/setup/complete POST
+ * - On success: clears localStorage state, redirects to /admin
+ * 
+ * STATE: Reads from localStorage via onboarding-wizard utilities
+ * PREV: /admin/setup/supervisors (Step 4)
+ * API: POST /api/admin/setup/complete
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

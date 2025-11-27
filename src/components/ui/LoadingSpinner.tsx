@@ -1,3 +1,20 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/components/ui/LoadingSpinner.tsx
+ * PURPOSE: Reusable loading spinner and button loading components
+ * EXPORTS: LoadingSpinner, ButtonLoading
+ * 
+ * COMPONENTS:
+ * - LoadingSpinner: Animated spinner with sm/md/lg sizes
+ * - ButtonLoading: Button wrapper that shows spinner during loading state
+ * 
+ * STYLING: Tailwind CSS (animate-spin, border-blue-600)
+ */
+
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg'
   className?: string

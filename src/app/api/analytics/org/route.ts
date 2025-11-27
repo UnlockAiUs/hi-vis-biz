@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/analytics/org/route.ts
+ * PURPOSE: API endpoint for organization-wide analytics for admin dashboard
+ * EXPORTS: GET handler
+ * 
+ * KEY LOGIC:
+ * - Requires admin/owner role to access
+ * - Returns: totalMembers, completedSessions, pendingSessions, sessionsThisWeek, responseRate
+ * - Calculates avgMorale/avgWorkload from user_profiles.profile_json.pulse
+ * - Generates moraleTrend (weekly averages over last 30 days)
+ * - Returns topPainThemes from pain_scanner data
+ */
+
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 

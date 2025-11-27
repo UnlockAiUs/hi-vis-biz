@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/admin/members/route.ts
+ * PURPOSE: API endpoints for managing organization members (delete, update role)
+ * EXPORTS: DELETE, PATCH handlers
+ * 
+ * KEY LOGIC:
+ * - DELETE: Remove member from org (deletes membership, profile, and auth user)
+ * - PATCH: Update member role (owner/admin/member) - only owners can change roles
+ * - Prevents deletion of owners without demotion first
+ * - Ensures at least one owner always exists
+ * - Uses service client to bypass RLS for admin operations
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 

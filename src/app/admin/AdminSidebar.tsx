@@ -1,3 +1,17 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/AdminSidebar.tsx
+ * PURPOSE: Admin navigation sidebar - responsive with mobile hamburger menu
+ * EXPORTS: default AdminSidebar (client component)
+ * PROPS: orgName (string)
+ * 
+ * NAV ITEMS: Dashboard, Departments, Members, Org Chart, Analytics, Settings
+ */
+
 'use client'
 
 import { useState } from 'react'
@@ -82,7 +96,7 @@ export default function AdminSidebar({ orgName }: AdminSidebarProps) {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-blue-600 shadow-lg">
         <div className="flex items-center justify-between h-14 px-4">
-          <span className="text-lg font-bold text-white">Hi-Vis Biz</span>
+          <span className="text-lg font-bold text-white">VizDots</span>
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="p-2 text-white rounded-md hover:bg-blue-700 focus:outline-none"
@@ -120,7 +134,7 @@ export default function AdminSidebar({ orgName }: AdminSidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo/Brand */}
           <div className="flex items-center justify-center h-16 px-4 bg-blue-600">
-            <span className="text-xl font-bold text-white">Hi-Vis Biz</span>
+            <span className="text-xl font-bold text-white">VizDots</span>
           </div>
 
           {/* Org Name */}

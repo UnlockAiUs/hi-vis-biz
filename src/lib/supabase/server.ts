@@ -1,3 +1,18 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/supabase/server.ts
+ * PURPOSE: Server-side Supabase client factories
+ * USE: Server components, API routes
+ * EXPORTS: 
+ *   - createClient() - returns server Supabase client (uses anon key)
+ *   - createServiceClient() - returns admin client (uses service role key, bypasses RLS)
+ * ENV VARS: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+ */
+
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 

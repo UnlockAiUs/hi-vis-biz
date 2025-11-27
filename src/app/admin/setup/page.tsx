@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/setup/page.tsx
+ * PURPOSE: Step 1 of setup wizard - Organization basic info
+ * EXPORTS: SetupStep1Page (default)
+ * 
+ * KEY FEATURES:
+ * - Organization name input
+ * - Timezone selection
+ * - Organization size band selection
+ * 
+ * STATE: Saves to localStorage via onboarding-wizard utilities
+ * NEXT: /admin/setup/departments (Step 2)
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

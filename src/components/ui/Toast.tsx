@@ -1,3 +1,26 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/components/ui/Toast.tsx
+ * PURPOSE: Toast notification system with context provider
+ * EXPORTS: ToastProvider, useToast hook
+ * 
+ * USAGE: Wrap app in ToastProvider, then use useToast() hook to show notifications
+ * 
+ * TOAST TYPES: success (green), error (red), warning (yellow), info (blue)
+ * 
+ * FEATURES:
+ * - Auto-dismiss after duration (default 5000ms)
+ * - Manual dismiss via close button
+ * - Stacked notifications (bottom-right)
+ * - Slide-in animation (requires animate-slide-in in globals.css)
+ * 
+ * EXAMPLE: const { addToast } = useToast(); addToast('Saved!', 'success')
+ */
+
 'use client'
 
 import { useState, useEffect, createContext, useContext, useCallback } from 'react'

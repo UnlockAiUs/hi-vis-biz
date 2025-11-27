@@ -1,3 +1,24 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/ai/agents/workflow-mapper.ts
+ * PURPOSE: Workflow Mapper AI agent - task/tool/process mapping
+ * EXPORTS: WorkflowMapperAgent (class), workflowMapperAgent (singleton instance)
+ * 
+ * OUTPUT SCHEMA: { workflow_name: string, display_label: string, steps: string[], tools: string[], data_sources: string[] }
+ * 
+ * CONVERSATION FLOW:
+ * 1. Opens by asking about a regular task or process
+ * 2. Focuses on ONE workflow per session
+ * 3. Collects 2 user messages minimum before completing
+ * 4. Extracts structured data via separate LLM call
+ * 
+ * DEPENDENCIES: ../openai, ./base, @/types/database
+ */
+
 import { WorkflowMapperOutput } from '@/types/database'
 import { createConversation, createChatCompletion } from '../openai'
 import { 

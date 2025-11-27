@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/utils/scheduler.ts
+ * PURPOSE: Session scheduling logic for automated micro-sessions
+ * EXPORTS:
+ *   - SCHEDULING_CONFIG - agent frequency settings (pulse weekly, role_mapper onboarding, etc.)
+ *   - DEFAULT_SCHEDULE - default weekly schedule (Mon-Fri 9-5)
+ *   - isSchedulingAllowed(orgSchedule, userOverride, timezone) - checks if scheduling is allowed now
+ *   - determineSessionsToSchedule(context, maxSessions) - returns sessions to create
+ *   - getProfileGaps(profile) - returns missing profile fields
+ *   - calculateProfileCompleteness(profile) - returns 0-100 completeness score
+ * CALLED BY: /api/internal/scheduler (Vercel cron job at 6 AM daily)
+ */
+
 import { ProfileJson } from '@/types/database'
 import { AgentCode } from '@/lib/ai/agents'
 

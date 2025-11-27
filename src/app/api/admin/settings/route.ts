@@ -1,3 +1,19 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/admin/settings/route.ts
+ * PURPOSE: API endpoint to update organization settings (name, timezone, schedule)
+ * EXPORTS: PATCH handler
+ * 
+ * KEY LOGIC:
+ * - Only organization owners can update settings
+ * - Supports updating: name, timezone, schedule_config
+ * - Uses service role client to bypass RLS for organization updates
+ */
+
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'

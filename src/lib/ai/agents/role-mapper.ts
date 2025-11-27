@@ -1,3 +1,23 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/ai/agents/role-mapper.ts
+ * PURPOSE: Role Mapper AI agent - job role discovery and responsibilities
+ * EXPORTS: RoleMapperAgent (class), roleMapperAgent (singleton instance)
+ * 
+ * OUTPUT SCHEMA: { role_summary: string, primary_duties: string[], customer_facing: boolean, kpis_known: boolean }
+ * 
+ * CONVERSATION FLOW:
+ * 1. Opens by asking about day-to-day responsibilities
+ * 2. Collects 2 user messages minimum before completing
+ * 3. Extracts structured data via separate LLM call
+ * 
+ * DEPENDENCIES: ../openai, ./base, @/types/database
+ */
+
 import { RoleMapperOutput } from '@/types/database'
 import { createConversation, createChatCompletion } from '../openai'
 import { 

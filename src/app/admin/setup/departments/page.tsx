@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/setup/departments/page.tsx
+ * PURPOSE: Step 2 of setup wizard - Create departments
+ * EXPORTS: SetupStep2Page (default)
+ * 
+ * KEY FEATURES:
+ * - Add/edit/delete departments
+ * - Duplicate name validation
+ * - Inline editing mode
+ * 
+ * STATE: Saves to localStorage via onboarding-wizard utilities
+ * PREV: /admin/setup (Step 1) | NEXT: /admin/setup/employees (Step 3)
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

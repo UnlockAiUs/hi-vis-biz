@@ -1,3 +1,22 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/dashboard/page.tsx
+ * PURPOSE: Employee dashboard - shows sessions, profile, stats
+ * EXPORTS: default DashboardPage (server component)
+ * 
+ * LOGIC:
+ * - No profile name → redirect to /onboarding
+ * - Shows pending, upcoming, and recent sessions
+ * - Displays profile card and completeness prompts
+ * 
+ * DEPENDENCIES: @/lib/supabase/server
+ * TABLES: organization_members, user_profiles, sessions, agents, organizations, departments
+ */
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'

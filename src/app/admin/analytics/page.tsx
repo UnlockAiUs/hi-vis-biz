@@ -1,3 +1,14 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/analytics/page.tsx
+ * PURPOSE: Analytics dashboard with org overview, morale trends, pain themes, department comparison
+ * FETCHES: /api/analytics/org, /api/analytics/departments
+ * USES: recharts for LineChart, BarChart, PieChart
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

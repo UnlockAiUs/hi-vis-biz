@@ -1,3 +1,19 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/ai/openai.ts
+ * PURPOSE: OpenAI client singleton and helper functions
+ * EXPORTS:
+ *   - getOpenAIClient() - returns singleton OpenAI client
+ *   - AI_CONFIG - default model configuration (gpt-4o-mini, temp 0.7, 1000 tokens)
+ *   - createChatCompletion<T>(system, user, options) - single-turn with optional JSON parsing
+ *   - createConversation(system, messages, options) - multi-turn conversation
+ * ENV VARS: OPENAI_API_KEY (server-side only)
+ */
+
 import OpenAI from 'openai'
 
 // OpenAI client singleton

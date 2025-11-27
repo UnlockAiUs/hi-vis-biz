@@ -1,3 +1,22 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/onboarding/page.tsx
+ * PURPOSE: Employee onboarding - profile creation/confirmation for invited employees
+ * EXPORTS: default OnboardingPage (client component)
+ * 
+ * LOGIC:
+ * - No org membership → shows "Create Organization" prompt (redirects to /admin/setup)
+ * - Has membership → pre-fills data from invite, lets user confirm/edit
+ * - Creates user_profile, updates organization_members, creates initial role_mapper session
+ * 
+ * DEPENDENCIES: @/lib/supabase/client, @/types/database
+ * TABLES: organization_members, user_profiles, departments, sessions, agents
+ */
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -279,7 +298,7 @@ export default function OnboardingPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome to Hi-Vis Biz!
+            Welcome to VizDots!
           </h2>
           <p className="text-gray-600 mb-8">
             Looks like you're a new user! Let's set up your organization so you can start getting insights from your team.

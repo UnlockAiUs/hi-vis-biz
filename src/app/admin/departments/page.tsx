@@ -1,3 +1,13 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/departments/page.tsx
+ * PURPOSE: Department management CRUD page with edit/delete modals
+ * TABLES: departments, organization_members (for member counts)
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

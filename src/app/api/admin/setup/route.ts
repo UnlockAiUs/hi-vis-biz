@@ -1,3 +1,22 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/admin/setup/route.ts
+ * PURPOSE: Organization creation API - creates new org + owner membership
+ * EXPORTS: POST (create organization)
+ * 
+ * POST: Creates org, adds user as owner, creates user_profile
+ * - Uses service role client to bypass RLS
+ * - Validates user not already in org
+ * - Rolls back on failure
+ * 
+ * DEPENDENCIES: @supabase/supabase-js, @supabase/ssr
+ * TABLES: organizations, organization_members, user_profiles
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'

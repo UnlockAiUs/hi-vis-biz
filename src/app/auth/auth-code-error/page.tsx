@@ -1,3 +1,19 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/auth/auth-code-error/page.tsx
+ * PURPOSE: Error page shown when OAuth/invite callback fails
+ * EXPORTS: AuthCodeErrorPage (default)
+ * 
+ * KEY LOGIC:
+ * - Displays user-friendly error message for auth failures
+ * - Common causes: expired link, already used link
+ * - Provides link back to login page
+ */
+
 import Link from 'next/link'
 
 export default function AuthCodeErrorPage() {

@@ -1,3 +1,25 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/page.tsx
+ * PURPOSE: Public landing page / marketing homepage
+ * 
+ * SECTIONS:
+ * - Header with nav (Sign in / Get Started)
+ * - Hero section with CTA
+ * - Stats section (2 min, 85% response, 3x/week, 5 agents)
+ * - Features section (5 AI agents + unified insights)
+ * - How It Works (3 steps)
+ * - Use Cases (HR, Managers, Ops, Execs)
+ * - CTA section
+ * - Footer
+ * 
+ * NOT PROTECTED - public access
+ */
+
 import Link from 'next/link'
 
 export default function HomePage() {
@@ -8,9 +30,9 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">HV</span>
+              <span className="text-white font-bold text-sm">VD</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900">Hi-Vis Biz</h1>
+            <h1 className="text-xl font-bold text-gray-900">VizDots</h1>
           </div>
           <div className="space-x-4">
             <Link
@@ -35,22 +57,22 @@ export default function HomePage() {
           <div className="text-center">
             <div className="inline-flex items-center bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full text-sm font-medium mb-6">
               <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-              AI-Powered Employee Insights
+              Simple. Human. Insightful.
             </div>
             <h2 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl leading-tight">
-              Understand Your Team
-              <span className="text-blue-600 block mt-2">In Just 2 Minutes a Day</span>
+              See Your Business Clearly
+              <span className="text-blue-600 block mt-2">One Dot at a Time</span>
             </h2>
             <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-600 leading-relaxed">
-              Build evolving employee profiles through micro AI conversations. 
-              Track morale, map workflows, and surface pain points—all without lengthy surveys.
+              VizDots turns small daily check-ins into a living map of how your business actually runs.
+              Uncover hidden steps. Spot friction points. Strengthen your team.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 href="/auth/register"
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                Start Free Trial
+                Start Free → 30 Days On Us
               </Link>
               <Link
                 href="#how-it-works"
@@ -59,7 +81,7 @@ export default function HomePage() {
                 See How It Works
               </Link>
             </div>
-            <p className="mt-4 text-sm text-gray-500">No credit card required • Free 30-day trial</p>
+            <p className="mt-4 text-sm text-gray-500">No credit card required • No setup • No dashboards to build</p>
           </div>
         </section>
 
@@ -243,7 +265,7 @@ export default function HomePage() {
               Built for Growing Teams
             </h3>
             <p className="mt-4 text-xl text-gray-600 max-w-2xl mx-auto">
-              Whether you're 10 people or 1,000, Hi-Vis helps you stay connected
+              Whether you&apos;re 10 people or 1,000, VizDots helps you stay connected
             </p>
           </div>
 
@@ -321,12 +343,12 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">HV</span>
+                  <span className="text-white font-bold text-sm">VD</span>
                 </div>
-                <span className="text-white font-bold">Hi-Vis Biz</span>
+                <span className="text-white font-bold">VizDots</span>
               </div>
               <p className="text-sm">
-                AI-powered employee insights for modern teams.
+                Small inputs. Big visibility. Real improvement.
               </p>
             </div>
             <div>
@@ -355,7 +377,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mt-12 pt-8 border-t border-gray-800 text-center text-sm">
-            <p>&copy; 2025 Hi-Vis Biz. All rights reserved.</p>
+            <p>&copy; 2025 VizDots. All rights reserved.</p>
           </div>
         </div>
       </footer>

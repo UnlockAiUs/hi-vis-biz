@@ -1,3 +1,20 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/ai/agents/base.ts
+ * PURPOSE: Base types, interfaces, and helpers for AI agent system
+ * EXPORTS:
+ *   - AgentCode type: 'pulse' | 'role_mapper' | 'workflow_mapper' | 'pain_scanner' | 'focus_tracker'
+ *   - AgentContext interface: context passed to every agent
+ *   - Agent interface: base interface all agents implement (processTurn, getOpeningMessage, extractData)
+ *   - AgentOutput union type: typed outputs for each agent
+ *   - Helper functions: buildContextPrompt, extractSupervisorMention, hasMinimumInfo, formatConversationHistory
+ * DEPENDENCIES: Types from src/types/database.ts
+ */
+
 import { ProfileJson, PulseOutput, RoleMapperOutput, WorkflowMapperOutput, PainScannerOutput, FocusTrackerOutput } from '@/types/database'
 
 // Agent codes as defined in the database

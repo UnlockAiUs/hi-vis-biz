@@ -1,3 +1,24 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/ai/agents/pain-scanner.ts
+ * PURPOSE: Pain Scanner AI agent - friction point and blocker identification
+ * EXPORTS: PainScannerAgent (class), painScannerAgent (singleton instance)
+ * 
+ * OUTPUT SCHEMA: { workflow_ref: string, tool_ref: string, pain_rating: 1-5, reason: string, frequency: string, impact: string }
+ * 
+ * CONVERSATION FLOW:
+ * 1. Opens by asking about frustrations or slow processes
+ * 2. Focuses on ONE pain point per session
+ * 3. Collects 2 user messages minimum before completing
+ * 4. Extracts structured data via separate LLM call
+ * 
+ * DEPENDENCIES: ../openai, ./base, @/types/database
+ */
+
 import { PainScannerOutput } from '@/types/database'
 import { createConversation, createChatCompletion } from '../openai'
 import { 

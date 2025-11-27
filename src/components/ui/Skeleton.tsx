@@ -1,3 +1,25 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/components/ui/Skeleton.tsx
+ * PURPOSE: Skeleton loading placeholder components for UI loading states
+ * EXPORTS: Skeleton, SkeletonCard, SkeletonTable, SkeletonStats, SkeletonChart, SkeletonForm, SkeletonList
+ * 
+ * COMPONENTS:
+ * - Skeleton: Base pulsing placeholder div
+ * - SkeletonCard: Card loading state
+ * - SkeletonTable: Table with rows loading state
+ * - SkeletonStats: 4-column stats grid loading state
+ * - SkeletonChart: Chart with title loading state
+ * - SkeletonForm: Form with fields loading state
+ * - SkeletonList: List items loading state
+ * 
+ * STYLING: Tailwind CSS (animate-pulse, bg-gray-200)
+ */
+
 import { CSSProperties } from 'react'
 
 interface SkeletonProps {

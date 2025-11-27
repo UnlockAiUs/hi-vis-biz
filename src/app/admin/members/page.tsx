@@ -1,3 +1,14 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/members/page.tsx
+ * PURPOSE: Member management with invite, CSV upload, edit, role change, schedule override
+ * TABLES: organization_members, departments, user_profiles
+ * CALLS: /api/admin/invite, /api/admin/members
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

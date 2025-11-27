@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/dashboard/layout.tsx
+ * PURPOSE: Layout wrapper for employee dashboard with navigation
+ * EXPORTS: DashboardLayout (default)
+ * 
+ * KEY LOGIC:
+ * - Server component that verifies user authentication
+ * - Redirects to /auth/login if not authenticated
+ * - Fetches membership role to show/hide Admin link
+ * - Displays user name from profile_json.name
+ * - Provides logout button using server action
+ */
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -48,7 +66,7 @@ export default async function DashboardLayout({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
                 </div>
-                <span className="ml-2 text-xl font-bold text-gray-900">Hi-Vis Biz</span>
+                <span className="ml-2 text-xl font-bold text-gray-900">VizDots</span>
               </Link>
             </div>
 

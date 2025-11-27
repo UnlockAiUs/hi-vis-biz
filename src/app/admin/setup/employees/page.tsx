@@ -1,3 +1,23 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/setup/employees/page.tsx
+ * PURPOSE: Step 3 of setup wizard - Add employees
+ * EXPORTS: SetupStep3Page (default)
+ * 
+ * KEY FEATURES:
+ * - Manual employee entry form (name, email, department, title)
+ * - CSV upload with drag-and-drop
+ * - CSV template download
+ * - Inline editing/deletion
+ * - hasDirectReports and canViewReports flags
+ * 
+ * STATE: Saves to localStorage via onboarding-wizard utilities
+ * PREV: /admin/setup/departments (Step 2) | NEXT: /admin/setup/supervisors (Step 4)
+ */
 'use client'
 
 import { useState, useEffect, useRef } from 'react'

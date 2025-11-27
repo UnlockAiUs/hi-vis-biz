@@ -1,3 +1,23 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/components/ui/ActionMenu.tsx
+ * PURPOSE: Dropdown action menu component with icon support
+ * EXPORTS: default ActionMenu, ActionMenuItem (interface), ActionMenuIcons
+ * 
+ * FEATURES:
+ * - Vertical 3-dot trigger button
+ * - Click outside to close
+ * - Escape key to close
+ * - Variant styles: default, danger, warning, success
+ * - Pre-built icons: edit, delete, deactivate, activate, role
+ * 
+ * USAGE: <ActionMenu items={[{ label: 'Edit', onClick: () => {}, icon: ActionMenuIcons.edit }]} />
+ */
+
 'use client'
 
 import { useState, useRef, useEffect } from 'react'

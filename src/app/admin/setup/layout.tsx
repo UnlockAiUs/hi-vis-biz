@@ -1,3 +1,21 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/setup/layout.tsx
+ * PURPOSE: Layout wrapper for organization setup wizard (5-step onboarding)
+ * EXPORTS: SetupLayout (default)
+ * 
+ * KEY FEATURES:
+ * - Step progress indicator (1-5)
+ * - Header with VizDots branding
+ * - Footer with support contact
+ * 
+ * WIZARD STEPS: 1=Org Info, 2=Departments, 3=Employees, 4=Supervisors, 5=Review
+ * IMPORTS: WIZARD_STEPS from @/lib/utils/onboarding-wizard
+ */
 'use client'
 
 import { usePathname } from 'next/navigation'
@@ -36,7 +54,7 @@ export default function SetupLayout({ children }: SetupLayoutProps) {
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Hi-Vis Biz</h1>
+                <h1 className="text-xl font-bold text-gray-900">VizDots</h1>
                 <p className="text-sm text-gray-500">Organization Setup</p>
               </div>
             </div>
@@ -113,7 +131,7 @@ export default function SetupLayout({ children }: SetupLayoutProps) {
       <footer className="border-t bg-white mt-auto">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-center text-sm text-gray-500">
-            Need help? Contact support at support@hivisbiz.com
+            Need help? Contact support at support@vizdots.com
           </p>
         </div>
       </footer>

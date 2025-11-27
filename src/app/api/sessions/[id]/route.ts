@@ -1,3 +1,19 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/api/sessions/[id]/route.ts
+ * PURPOSE: API endpoint for individual session operations (get details, start, complete)
+ * EXPORTS: GET, PATCH handlers
+ * 
+ * KEY LOGIC:
+ * - GET: Returns session with agents, session_topics, topic_archetypes, and answers
+ * - PATCH: Handles 'start' action (sets started_at) and 'complete' action (sets completed_at)
+ * - All operations verify session belongs to authenticated user
+ */
+
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 

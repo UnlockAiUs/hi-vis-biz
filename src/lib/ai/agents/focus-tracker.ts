@@ -1,3 +1,26 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/lib/ai/agents/focus-tracker.ts
+ * PURPOSE: Focus Tracker AI agent - current work priorities and focus tracking
+ * EXPORTS: FocusTrackerAgent (class), focusTrackerAgent (singleton instance)
+ * 
+ * OUTPUT SCHEMA: { current_focus_label: string, current_focus_tags: string[], still_primary_focus: boolean, 
+ *                  focus_rating: 1-5, change_vs_last_time: string, reason: string }
+ * 
+ * SPECIAL BEHAVIOR: Uses previous focus from profile to ask about changes
+ * 
+ * CONVERSATION FLOW:
+ * 1. Opens by asking about current main priority (or checking if previous focus is still active)
+ * 2. Collects 2 user messages minimum before completing
+ * 3. Extracts structured data via separate LLM call
+ * 
+ * DEPENDENCIES: ../openai, ./base, @/types/database
+ */
+
 import { FocusTrackerOutput } from '@/types/database'
 import { createConversation, createChatCompletion } from '../openai'
 import { 

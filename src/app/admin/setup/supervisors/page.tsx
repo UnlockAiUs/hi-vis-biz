@@ -1,3 +1,22 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ * 
+ * FILE: src/app/admin/setup/supervisors/page.tsx
+ * PURPOSE: Step 4 of setup wizard - Assign supervisors to employees
+ * EXPORTS: SetupStep4Page (default)
+ * 
+ * KEY FEATURES:
+ * - Supervisor assignment per employee
+ * - Only employees with hasDirectReports=true can be supervisors
+ * - Group employees by department for display
+ * - Skip option (supervisor assignment is optional)
+ * 
+ * STATE: Saves to localStorage via onboarding-wizard utilities
+ * PREV: /admin/setup/employees (Step 3) | NEXT: /admin/setup/review (Step 5)
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

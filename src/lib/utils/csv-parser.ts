@@ -1,8 +1,22 @@
 /**
- * CSV Parser for Employee Bulk Upload
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║ CRITICAL: AI AGENTS - READ BEFORE MODIFYING                                   ║
+ * ║ If you modify this file, you MUST update MASTER_PROJECT_CONTEXT.md            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
  * 
- * Handles parsing CSV files for employee data and generates
- * downloadable CSV templates.
+ * FILE: src/lib/utils/csv-parser.ts
+ * PURPOSE: CSV parsing for employee bulk upload in onboarding wizard
+ * EXPORTS: CSV_HEADERS, ParseResult, ParseError, generateCSVTemplate, downloadCSVTemplate,
+ *          parseCSV, employeesToCSV, readFileAsText
+ * 
+ * KEY FEATURES:
+ * - Generate CSV template with example data
+ * - Parse uploaded CSV with validation (required fields, email format, duplicates)
+ * - Handle quoted values and various line endings
+ * - Validate departments against provided list
+ * - Export employees back to CSV format
+ * 
+ * DEPENDENCIES: ./onboarding-wizard (EmployeeEntry, generateTempId, isValidEmail)
  */
 
 import { EmployeeEntry, generateTempId, isValidEmail } from './onboarding-wizard'
