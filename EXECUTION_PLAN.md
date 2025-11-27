@@ -3,8 +3,8 @@
 
 ## Quick Status
 ```
-CURRENT_PHASE: 10
-CURRENT_TASK: Phase 10 COMPLETE
+CURRENT_PHASE: 11
+CURRENT_TASK: 11.1
 BLOCKERS: none
 LAST_UPDATED: 2025-11-26
 LAST_AGENT: cline
@@ -357,10 +357,252 @@ The current onboarding flow has issues:
 
 ---
 
+## Phase 11: UX Flow Fixes & Trial Infrastructure
+**Goal**: Fix all user flows to be production-ready, add 30-day free trial infrastructure, prepare for Stripe billing
+
+### UX Audit Summary
+
+**Problem Identified**: New clients signing up via "Get Started" get error "You are not associated with any organization" because:
+1. Auth callback doesn't intelligently route users based on their status
+2. `/onboarding` page is for INVITED employees, not new org owners
+3. No smart detection of user type (new owner vs invited employee vs returning user)
+
+**User Personas**:
+- **New Client (Org Owner)**: Signs up → needs to CREATE organization via `/admin/setup`
+- **Invited Employee**: Accepts invite → needs to JOIN existing org via `/onboarding`
+- **Returning Admin/Owner**: Logs in → goes to `/admin`
+- **Returning Employee**: Logs in → goes to `/dashboard`
+
+**Billing Model (Future Stripe Integration)**:
+- $10/month base (includes 1 user)
+- $2/user/month for additional users
+- 30-day free trial (full features, no limits)
+
+---
+
+### Sub-Phase 11A: Database Schema for Trials
+**Goal**: Add trial/subscription tracking to support 30-day free trial
+
+- [ ] `11.1` Create migration: `010_subscription_trial.sql`
+  ```sql
+  -- Add trial and subscription fields to organizations
+  ALTER TABLE organizations
+    ADD COLUMN trial_started_at TIMESTAMPTZ DEFAULT NOW(),
+    ADD COLUMN trial_ends_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '30 days'),
+    ADD COLUMN subscription_status VARCHAR(20) DEFAULT 'trialing' 
+      CHECK (subscription_status IN ('trialing', 'active', 'past_due', 'canceled', 'expired')),
+    ADD COLUMN stripe_customer_id VARCHAR(255),
+    ADD COLUMN stripe_subscription_id VARCHAR(255);
+  
+  -- Index for subscription queries
+  CREATE INDEX idx_org_subscription_status ON organizations(subscription_status);
+  CREATE INDEX idx_org_trial_ends ON organizations(trial_ends_at);
+  ```
+  **Verify**: Migration runs in Supabase SQL Editor
+
+- [ ] `11.2` Update TypeScript types
+  - Add new fields to Organization type in `database.ts`
+  **Verify**: Types include trial/subscription fields
+
+- [ ] `11.3` Commit schema changes
+  ```bash
+  git add .
+  git commit -m "Add trial/subscription schema (migration 010)"
+  git push
+  ```
+
+---
+
+### Sub-Phase 11B: Smart Auth Routing
+**Goal**: Route users intelligently after authentication based on their status
+
+- [ ] `11.4` Rewrite auth callback with smart routing
+  - `src/app/auth/callback/route.ts`
+  - After successful auth, check:
+    1. Is `type=invite`? → Handle invite flow (existing code)
+    2. Does user have `organization_members` record? 
+       - YES with role=owner/admin → `/admin`
+       - YES with role=member → check profile → `/dashboard` or `/onboarding`
+       - NO → This is a NEW user → `/admin/setup`
+  - Key logic:
+    ```typescript
+    // After auth success:
+    const { data: membership } = await supabase
+      .from('organization_members')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    
+    if (!membership) {
+      // NEW USER - send to org setup
+      return redirect('/admin/setup')
+    } else if (membership.role === 'owner' || membership.role === 'admin') {
+      return redirect('/admin')
+    } else {
+      // Employee - check if profile complete
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('profile_json')
+        .eq('user_id', user.id)
+        .single()
+      
+      if (!profile?.profile_json?.name) {
+        return redirect('/onboarding')
+      }
+      return redirect('/dashboard')
+    }
+    ```
+  **Verify**: New user signup → redirects to `/admin/setup`
+
+- [ ] `11.5` Update registration success flow
+  - When email is confirmed, Supabase sends to `/auth/callback`
+  - Callback now handles smart routing
+  **Verify**: Complete signup flow works end-to-end
+
+- [ ] `11.6` Commit smart routing
+  ```bash
+  git add .
+  git commit -m "Implement smart auth routing based on user status"
+  git push
+  ```
+
+---
+
+### Sub-Phase 11C: Fix Organization Setup Wizard
+**Goal**: Ensure setup wizard creates owner membership and initializes trial
+
+- [ ] `11.7` Update setup complete API
+  - `src/app/api/admin/setup/complete/route.ts`
+  - When creating org, also set:
+    - `trial_started_at = NOW()`
+    - `trial_ends_at = NOW() + 30 days`
+    - `subscription_status = 'trialing'`
+  - Create owner's `organization_members` record with current user
+  - Create owner's initial `user_profiles` record
+  **Verify**: Setup wizard creates org with trial dates
+
+- [ ] `11.8` Add owner to org during setup
+  - Currently wizard only creates employee members
+  - MUST create owner's own membership record first
+  - Owner record: `role='owner', user_id=current_user.id`
+  **Verify**: Owner has membership after setup
+
+- [ ] `11.9` Commit setup fixes
+  ```bash
+  git add .
+  git commit -m "Fix setup wizard to create owner membership and trial"
+  git push
+  ```
+
+---
+
+### Sub-Phase 11D: Update Landing Page
+**Goal**: Consistent messaging and correct trial period
+
+- [ ] `11.10` Update landing page trial messaging
+  - Change "Free 14-day trial" to "Free 30-day trial"
+  - Ensure all CTAs lead to `/auth/register`
+  **Verify**: Landing page shows 30-day trial
+
+- [ ] `11.11` Commit landing page updates
+  ```bash
+  git add .
+  git commit -m "Update landing page with 30-day trial messaging"
+  git push
+  ```
+
+---
+
+### Sub-Phase 11E: Trial Status Display
+**Goal**: Show trial status in admin UI
+
+- [ ] `11.12` Add trial banner to admin layout
+  - Show "X days left in trial" banner
+  - Link to future billing page (placeholder)
+  - Only show for `subscription_status = 'trialing'`
+  **Verify**: Admin sees trial countdown
+
+- [ ] `11.13` Create billing placeholder page
+  - `src/app/admin/billing/page.tsx`
+  - Shows: Current plan, trial status, upgrade CTA (disabled)
+  - Placeholder text: "Billing integration coming soon"
+  **Verify**: Billing page accessible but clearly placeholder
+
+- [ ] `11.14` Commit trial UI
+  ```bash
+  git add .
+  git commit -m "Add trial status display and billing placeholder"
+  git push
+  ```
+
+---
+
+### Sub-Phase 11F: Onboarding Page Fix
+**Goal**: Better error handling for edge cases
+
+- [ ] `11.15` Improve onboarding error handling
+  - If user has no org membership AND is not an invited user:
+    - Show helpful message: "Looks like you're a new user! Let's set up your organization."
+    - Button: "Create Organization" → `/admin/setup`
+  - Current error is confusing
+  **Verify**: Helpful error with action button
+
+- [ ] `11.16` Commit onboarding improvements
+  ```bash
+  git add .
+  git commit -m "Improve onboarding page error handling"
+  git push
+  ```
+
+---
+
+### Sub-Phase 11G: Test All User Flows
+**Goal**: Verify all user journeys work correctly
+
+- [ ] `11.17` Test: New client signup flow
+  1. Go to landing page → Click "Get Started"
+  2. Register with email/password
+  3. Confirm email via link
+  4. Should land on `/admin/setup` (NOT onboarding error)
+  5. Complete 5-step wizard
+  6. Should land on `/admin` with trial banner
+  **Verify**: Complete new client flow works
+
+- [ ] `11.18` Test: Invited employee flow
+  1. Admin invites employee via Members page
+  2. Employee receives email, clicks link
+  3. Sets password
+  4. Lands on `/onboarding` with pre-filled info
+  5. Confirms → lands on `/dashboard` or first session
+  **Verify**: Complete invited employee flow works
+
+- [ ] `11.19` Test: Returning user flows
+  1. Admin logs in → lands on `/admin`
+  2. Employee logs in → lands on `/dashboard`
+  **Verify**: Returning users route correctly
+
+- [ ] `11.20` Final commit for Phase 11
+  ```bash
+  git add .
+  git commit -m "Complete Phase 11: UX Flow Fixes & Trial Infrastructure"
+  git push
+  ```
+  **Verify**: All flows work on production
+
+---
+
 ## Previous Phases (Completed)
 
 <details>
-<summary>Phase 0-9 (Completed)</summary>
+<summary>Phase 0-10 (Completed)</summary>
+
+## Phase 10: Complete Onboarding Rework ✅ COMPLETE
+**Goal**: Replace fragmented onboarding with 6-step wizard flow
+- Enhanced database schema for pre-invite employee data
+- 5-step admin wizard (Organization → Departments → Employees → Supervisors → Review)
+- CSV bulk upload for employees
+- Employee onboarding with pre-filled data
+- Updated admin pages for new data model
 
 ## Phase 0: Project Initialization
 **Goal**: Empty folder → running Next.js app connected to GitHub - ✅ COMPLETE
@@ -391,7 +633,7 @@ The current onboarding flow has issues:
 
 ## Phase 9: Admin & Org Enhancements
 **Goal**: Improve admin experience with better org management - ✅ COMPLETE (Sub-phases 9A-9C)
-- Sub-Phase 9D (Multi-Org Support) deferred - will be implemented after Phase 10
+- Sub-Phase 9D (Multi-Org Support) deferred - will be implemented later
 
 </details>
 

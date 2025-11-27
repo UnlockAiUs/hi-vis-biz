@@ -207,6 +207,12 @@ export type Database = {
           name: string
           timezone: string
           size_band: string | null
+          // Trial and subscription fields (migration 010)
+          trial_started_at: string | null
+          trial_ends_at: string | null
+          subscription_status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired'
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           created_at: string
           updated_at: string
         }
@@ -215,6 +221,12 @@ export type Database = {
           name: string
           timezone?: string
           size_band?: string | null
+          // Trial and subscription fields (migration 010)
+          trial_started_at?: string | null
+          trial_ends_at?: string | null
+          subscription_status?: 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired'
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -223,6 +235,12 @@ export type Database = {
           name?: string
           timezone?: string
           size_band?: string | null
+          // Trial and subscription fields (migration 010)
+          trial_started_at?: string | null
+          trial_ends_at?: string | null
+          subscription_status?: 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired'
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           created_at?: string
           updated_at?: string
         }
