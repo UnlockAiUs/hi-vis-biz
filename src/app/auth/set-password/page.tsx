@@ -90,46 +90,28 @@ export default function SetPasswordPage() {
       return
     }
 
-    // IMPORTANT: For invited users, we need to link their auth user_id to their
-    // organization_members record. The record was created with user_id = NULL
-    // and invited_email = their email. Now we link them.
-    
-    // First, try to find an existing membership by user_id (returning users)
-    const { data: existingMembership } = await supabase
-      .from('organization_members')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    
-    if (existingMembership) {
-      // User already has a linked membership, just update status
-      await supabase
-        .from('organization_members')
-        .update({ status: 'active', invite_status: 'accepted' })
-        .eq('user_id', user.id)
-    } else if (user.email) {
-      // No linked membership - look for one by invited_email and link it
-      const { data: invitedMembership, error: linkError } = await supabase
-        .from('organization_members')
-        .update({ 
-          user_id: user.id, 
-          status: 'active',
-          invite_status: 'accepted'
-        })
-        .eq('invited_email', user.email)
-        .is('user_id', null)  // Only match unlinked records
-        .select('id')
-        .maybeSingle()
+    // IMPORTANT: Call the server-side API to link invited users to their org membership
+    // This uses the service role key to bypass RLS (since organization_members records
+    // have user_id = NULL until linked)
+    try {
+      const linkResponse = await fetch('/api/auth/link-invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
       
-      if (linkError) {
-        console.error('Error linking membership:', linkError)
-      }
+      const linkResult = await linkResponse.json()
+      console.log('Link invite result:', linkResult)
       
-      if (invitedMembership) {
-        console.log('Successfully linked user to invited membership:', invitedMembership.id)
-      } else {
-        console.log('No invited membership found for email:', user.email)
+      if (linkResult.linked) {
+        console.log('Successfully linked user to invited membership')
+      } else if (linkResult.isNewUser) {
+        console.log('New user - no invited membership found')
       }
+    } catch (linkErr) {
+      console.error('Error calling link-invite API:', linkErr)
+      // Continue anyway - the onboarding page will handle the routing
     }
 
     // Password set successfully, redirect to onboarding to complete profile
