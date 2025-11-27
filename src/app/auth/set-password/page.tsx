@@ -90,11 +90,47 @@ export default function SetPasswordPage() {
       return
     }
 
-    // Update member status to active
-    await supabase
+    // IMPORTANT: For invited users, we need to link their auth user_id to their
+    // organization_members record. The record was created with user_id = NULL
+    // and invited_email = their email. Now we link them.
+    
+    // First, try to find an existing membership by user_id (returning users)
+    const { data: existingMembership } = await supabase
       .from('organization_members')
-      .update({ status: 'active' })
+      .select('id')
       .eq('user_id', user.id)
+      .maybeSingle()
+    
+    if (existingMembership) {
+      // User already has a linked membership, just update status
+      await supabase
+        .from('organization_members')
+        .update({ status: 'active', invite_status: 'accepted' })
+        .eq('user_id', user.id)
+    } else if (user.email) {
+      // No linked membership - look for one by invited_email and link it
+      const { data: invitedMembership, error: linkError } = await supabase
+        .from('organization_members')
+        .update({ 
+          user_id: user.id, 
+          status: 'active',
+          invite_status: 'accepted'
+        })
+        .eq('invited_email', user.email)
+        .is('user_id', null)  // Only match unlinked records
+        .select('id')
+        .maybeSingle()
+      
+      if (linkError) {
+        console.error('Error linking membership:', linkError)
+      }
+      
+      if (invitedMembership) {
+        console.log('Successfully linked user to invited membership:', invitedMembership.id)
+      } else {
+        console.log('No invited membership found for email:', user.email)
+      }
+    }
 
     // Password set successfully, redirect to onboarding to complete profile
     router.push('/onboarding')
