@@ -8,13 +8,14 @@
 
 ## META
 ```yaml
-version: 1.4.0
+version: 1.5.0
 last_updated: 2025-11-27
 last_agent: cline
 purpose: SINGLE SOURCE OF TRUTH for all AI agents working on this project
 format: optimized for AI token efficiency
 documentation_status: COMPLETE - all 65 code files documented
 rebrand_status: COMPLETE - rebranded from Hi-Vis Biz to VizDots
+early_warning_signals: COMPLETE - Phase 5 analytics feature added
 ```
 
 ## CRITICAL RULES FOR AI AGENTS
@@ -577,3 +578,16 @@ find supabase/migrations -name "*.sql" | wc -l
   - File count: 64 → 65 TypeScript/TSX files (1 new page)
   - Version bumped to 1.4.0
   - Phase 2 progress: Admin Dashboard Structure COMPLETE
+2025-11-27 cline - Added Early Warning Signals (Phase 5):
+  - Enhanced src/app/admin/page.tsx with Early Warning Signals section:
+    - Detects friction keywords in recent check-ins (blocked, delay, waiting, stuck, slow, problem, issue, frustrated, bottleneck, backlog)
+    - Shows warnings when keywords appear 3+ times
+    - Tracks participation drops by department (>30% decrease triggers warning)
+    - Color-coded severity levels (high=red, medium=orange)
+    - Added last week's session data fetch for week-over-week comparison
+    - Added Workflows quick action link
+  - Fixed TypeScript FK relation errors (Supabase pattern):
+    - Department FK returns array, requires: `const deptRaw = m.department as any; Array.isArray(deptRaw) ? deptRaw[0]?.name : deptRaw?.name`
+    - Session FK same pattern for organization relation
+  - Version bumped to 1.5.0
+  - Phase 5 progress: Early Warning Signals COMPLETE
