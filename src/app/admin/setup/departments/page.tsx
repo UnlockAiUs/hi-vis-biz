@@ -14,7 +14,7 @@
  * - Inline editing mode
  * 
  * STATE: Saves to localStorage via onboarding-wizard utilities
- * PREV: /admin/setup (Step 1) | NEXT: /admin/setup/employees (Step 3)
+ * PREV: /admin/setup (Step 1) | NEXT: /admin/setup/people (Step 3)
  */
 'use client'
 
@@ -168,7 +168,7 @@ export default function SetupStep2Page() {
     setState(newState)
     saveOnboardingState(newState)
     
-    router.push('/admin/setup/employees')
+    router.push('/admin/setup/people')
   }
 
   if (loading) {
@@ -184,10 +184,10 @@ export default function SetupStep2Page() {
       {/* Step Header */}
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-gray-900">
-          Create Departments
+          Departments & Roles
         </h2>
         <p className="mt-2 text-gray-600">
-          Step 2 of 5: Add your organization&apos;s departments
+          Step 2 of 4: Add your organization&apos;s departments
         </p>
       </div>
 
@@ -321,7 +321,7 @@ export default function SetupStep2Page() {
             disabled={departments.length === 0}
             className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Next: Add Employees →
+            Next: Add People →
           </button>
         </div>
       </div>

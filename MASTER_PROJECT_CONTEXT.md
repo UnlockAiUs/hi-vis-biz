@@ -8,12 +8,12 @@
 
 ## META
 ```yaml
-version: 1.2.0
+version: 1.3.0
 last_updated: 2025-11-27
 last_agent: cline
 purpose: SINGLE SOURCE OF TRUTH for all AI agents working on this project
 format: optimized for AI token efficiency
-documentation_status: COMPLETE - all 61 code files documented
+documentation_status: COMPLETE - all 64 code files documented
 rebrand_status: COMPLETE - rebranded from Hi-Vis Biz to VizDots
 ```
 
@@ -63,7 +63,7 @@ VizDots Terminology:
 ## USER ROLES & FLOWS
 | Role | Entry Point | Destination | Capabilities |
 |------|-------------|-------------|--------------|
-| New Org Owner | /auth/register | /admin/setup | Create org via 5-step wizard |
+| New Org Owner | /auth/register | /admin/setup | Create org via 4-step wizard |
 | Invited Employee | Email link | /onboarding | Confirm info, start micro-sessions |
 | Returning Admin | /auth/login | /admin | Manage org, view analytics |
 | Returning Employee | /auth/login | /dashboard | Complete micro-sessions |
@@ -95,7 +95,7 @@ VizDots Terminology:
 │   │   │   ├── internal/       # Internal/cron APIs
 │   │   │   └── sessions/       # Session management APIs
 │   │   ├── admin/              # Admin UI pages
-│   │   │   └── setup/          # 5-step onboarding wizard
+│   │   │   └── setup/          # 4-step onboarding wizard
 │   │   ├── auth/               # Auth UI pages
 │   │   ├── dashboard/          # Employee UI pages
 │   │   │   └── session/[id]/   # Micro-session chat
@@ -183,7 +183,7 @@ VizDots Terminology:
 |------|---------|---------------|
 | `src/lib/utils/profile.ts` | Profile merge utilities | mergeAgentOutputIntoProfile, updateProfileGaps |
 | `src/lib/utils/scheduler.ts` | Session scheduling | SCHEDULING_CONFIG, determineSessionsToSchedule |
-| `src/lib/utils/onboarding-wizard.ts` | Wizard state management | OnboardingState, useWizardState, localStorage persistence |
+| `src/lib/utils/onboarding-wizard.ts` | Wizard state management | OnboardingState, useWizardState, WIZARD_STEPS (4 steps), INDUSTRIES, ScheduleSettings |
 | `src/lib/utils/csv-parser.ts` | Employee CSV import | parseCSV, generateCSVTemplate, downloadCSVTemplate |
 
 ### UI Components
@@ -230,16 +230,18 @@ VizDots Terminology:
 | `src/app/admin/org-chart/page.tsx` | Organization chart | Hierarchical view of org structure |
 | `src/app/admin/settings/page.tsx` | Organization settings | Org name, timezone, scheduling preferences |
 
-### Admin Setup Wizard (5 Steps)
+### Admin Setup Wizard (4 Steps)
 
 | File | Purpose | Key Logic |
 |------|---------|-----------|
-| `src/app/admin/setup/layout.tsx` | Wizard layout | Progress indicator, step navigation |
-| `src/app/admin/setup/page.tsx` | Step 1: Company info | Org name, size, timezone input |
-| `src/app/admin/setup/departments/page.tsx` | Step 2: Departments | Add/edit/delete departments |
-| `src/app/admin/setup/employees/page.tsx` | Step 3: Employees | CSV upload or manual entry |
-| `src/app/admin/setup/supervisors/page.tsx` | Step 4: Supervisors | Assign reporting relationships |
-| `src/app/admin/setup/review/page.tsx` | Step 5: Review & launch | Summary, confirm, complete setup |
+| `src/app/admin/setup/layout.tsx` | Wizard layout | Progress indicator (4 steps), step navigation |
+| `src/app/admin/setup/page.tsx` | Step 1: Company Basics | Org name, industry dropdown, team size |
+| `src/app/admin/setup/departments/page.tsx` | Step 2: Departments & Roles | Add/edit/delete departments |
+| `src/app/admin/setup/people/page.tsx` | Step 3: People | CSV upload or manual entry |
+| `src/app/admin/setup/settings/page.tsx` | Step 4: Settings & Launch | Check-in frequency, time window, review summary, launch |
+| `src/app/admin/setup/employees/page.tsx` | (Legacy - unused) | Old Step 3 |
+| `src/app/admin/setup/supervisors/page.tsx` | (Legacy - unused) | Old Step 4 |
+| `src/app/admin/setup/review/page.tsx` | (Legacy - unused) | Old Step 5 |
 
 ### Onboarding
 
@@ -377,7 +379,7 @@ After auth success:
 
 ---
 
-## COMPLETE FILE CHECKLIST (61 TypeScript/TSX + 10 SQL)
+## COMPLETE FILE CHECKLIST (64 TypeScript/TSX + 10 SQL)
 
 ### ✅ Core Infrastructure (4 files)
 - [x] `src/middleware.ts`
@@ -436,13 +438,15 @@ After auth success:
 - [x] `src/app/admin/org-chart/page.tsx`
 - [x] `src/app/admin/settings/page.tsx`
 
-### ✅ Admin Setup Wizard (6 files)
+### ✅ Admin Setup Wizard (8 files - 5 active, 3 legacy)
 - [x] `src/app/admin/setup/layout.tsx`
 - [x] `src/app/admin/setup/page.tsx`
 - [x] `src/app/admin/setup/departments/page.tsx`
-- [x] `src/app/admin/setup/employees/page.tsx`
-- [x] `src/app/admin/setup/supervisors/page.tsx`
-- [x] `src/app/admin/setup/review/page.tsx`
+- [x] `src/app/admin/setup/people/page.tsx` (NEW - Step 3)
+- [x] `src/app/admin/setup/settings/page.tsx` (NEW - Step 4)
+- [x] `src/app/admin/setup/employees/page.tsx` (legacy)
+- [x] `src/app/admin/setup/supervisors/page.tsx` (legacy)
+- [x] `src/app/admin/setup/review/page.tsx` (legacy)
 
 ### ✅ Onboarding (1 file)
 - [x] `src/app/onboarding/page.tsx`
@@ -484,7 +488,7 @@ After auth success:
 Run this to verify all files exist:
 ```bash
 find src -name "*.ts" -o -name "*.tsx" | wc -l
-# Should output: 61
+# Should output: 64
 find supabase/migrations -name "*.sql" | wc -l
 # Should output: 10
 ```
@@ -530,3 +534,25 @@ find supabase/migrations -name "*.sql" | wc -l
   - Updated src/app/dashboard/page.tsx with link to My Dots
   - File count: 61 → 62 TypeScript/TSX files
   - Phase 2 progress: Employee Flow Improvements - My Dots COMPLETE
+2025-11-27 cline - Added Employee Welcome Screen (Phase 2):
+  - Modified src/app/onboarding/page.tsx
+  - Added 2-step flow: welcome → form
+  - Welcome screen explains VizDots: 1-minute check-ins, dots concept, team benefits
+  - Shows organization name (if invited to existing org)
+  - "Let's Get Started" CTA transitions to profile form
+  - Phase 2 progress: Employee Welcome Screen COMPLETE
+2025-11-27 cline - Refactored Admin Onboarding Wizard (5 → 4 steps):
+  - Updated src/lib/utils/onboarding-wizard.ts:
+    - Added industry field and INDUSTRIES constant
+    - Added ScheduleSettings interface with frequency, days, time window
+    - Changed currentStep type from 1-5 to 1-4
+    - Updated WIZARD_STEPS to 4 steps: Company → Departments → People → Settings
+  - Updated src/app/admin/setup/page.tsx: Added industry dropdown, "Company Basics" title
+  - Updated src/app/admin/setup/departments/page.tsx: "Departments & Roles", nav to /people
+  - Created src/app/admin/setup/people/page.tsx: CSV upload + manual entry
+  - Created src/app/admin/setup/settings/page.tsx: Check-in settings + review + launch
+  - Updated src/app/admin/setup/layout.tsx: 4-step progress indicator
+  - Legacy files kept but unused: employees, supervisors, review pages
+  - File count: 62 → 64 TypeScript/TSX files (2 new pages)
+  - Version bumped to 1.3.0
+  - Phase 2 progress: Admin Onboarding Wizard COMPLETE

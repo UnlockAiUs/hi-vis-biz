@@ -5,15 +5,15 @@
  * ╚═══════════════════════════════════════════════════════════════════════════════╝
  * 
  * FILE: src/app/admin/setup/layout.tsx
- * PURPOSE: Layout wrapper for organization setup wizard (5-step onboarding)
+ * PURPOSE: Layout wrapper for organization setup wizard (4-step onboarding)
  * EXPORTS: SetupLayout (default)
  * 
  * KEY FEATURES:
- * - Step progress indicator (1-5)
+ * - Step progress indicator (1-4)
  * - Header with VizDots branding
  * - Footer with support contact
  * 
- * WIZARD STEPS: 1=Org Info, 2=Departments, 3=Employees, 4=Supervisors, 5=Review
+ * WIZARD STEPS: 1=Company Basics, 2=Departments & Roles, 3=People, 4=Settings & Launch
  * IMPORTS: WIZARD_STEPS from @/lib/utils/onboarding-wizard
  */
 'use client'
@@ -33,9 +33,8 @@ export default function SetupLayout({ children }: SetupLayoutProps) {
   const getCurrentStep = (): number => {
     if (pathname === '/admin/setup') return 1
     if (pathname === '/admin/setup/departments') return 2
-    if (pathname === '/admin/setup/employees') return 3
-    if (pathname === '/admin/setup/supervisors') return 4
-    if (pathname === '/admin/setup/review') return 5
+    if (pathname === '/admin/setup/people') return 3
+    if (pathname === '/admin/setup/settings') return 4
     return 1
   }
   

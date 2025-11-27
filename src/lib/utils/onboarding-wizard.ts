@@ -7,12 +7,12 @@
  * FILE: src/lib/utils/onboarding-wizard.ts
  * PURPOSE: Admin onboarding wizard state management with localStorage persistence
  * EXPORTS:
- *   - OnboardingState, EmployeeEntry, DepartmentEntry, OrganizationData types
+ *   - OnboardingState, EmployeeEntry, DepartmentEntry, OrganizationData, ScheduleSettings types
  *   - loadOnboardingState(), saveOnboardingState(), clearOnboardingState()
  *   - Validation helpers: isValidEmail, isValidEmployee, isValidOrganization
  *   - Step navigation: WIZARD_STEPS, getStepPath, canAccessStep, getStepValidation
- *   - Constants: SIZE_BANDS, TIMEZONES
- * USED BY: /admin/setup/* wizard pages (5-step org setup flow)
+ *   - Constants: SIZE_BANDS, TIMEZONES, INDUSTRIES
+ * USED BY: /admin/setup/* wizard pages (4-step org setup flow)
  */
 
 // Types for the onboarding wizard
@@ -37,15 +37,32 @@ export interface OrganizationData {
   name: string
   timezone: string
   sizeBand: string
+  industry: string
+}
+
+export interface ScheduleSettings {
+  frequency: 'daily' | 'weekly'
+  preferredDays: string[] // For weekly: ['monday', 'wednesday', 'friday']
+  timeWindowStart: string // e.g., '09:00'
+  timeWindowEnd: string // e.g., '17:00'
 }
 
 export interface OnboardingState {
-  currentStep: 1 | 2 | 3 | 4 | 5
+  currentStep: 1 | 2 | 3 | 4
   organization: OrganizationData | null
   departments: DepartmentEntry[]
   employees: EmployeeEntry[]
+  scheduleSettings: ScheduleSettings | null
   isComplete: boolean
   lastUpdated: string
+}
+
+// Default schedule settings
+export const DEFAULT_SCHEDULE_SETTINGS: ScheduleSettings = {
+  frequency: 'weekly',
+  preferredDays: ['monday', 'wednesday', 'friday'],
+  timeWindowStart: '09:00',
+  timeWindowEnd: '17:00',
 }
 
 // Default initial state
@@ -54,6 +71,7 @@ export const INITIAL_ONBOARDING_STATE: OnboardingState = {
   organization: null,
   departments: [],
   employees: [],
+  scheduleSettings: null,
   isComplete: false,
   lastUpdated: new Date().toISOString(),
 }
@@ -154,7 +172,8 @@ export function isValidOrganization(org: Partial<OrganizationData> | null): org 
     org &&
     org.name?.trim() &&
     org.timezone?.trim() &&
-    org.sizeBand?.trim()
+    org.sizeBand?.trim() &&
+    org.industry?.trim()
   )
 }
 
@@ -175,14 +194,13 @@ export function getSupervisorName(employees: EmployeeEntry[], supervisorId: stri
 }
 
 /**
- * Step configuration for the wizard
+ * Step configuration for the wizard (4 steps)
  */
 export const WIZARD_STEPS = [
-  { step: 1, title: 'Organization', path: '/admin/setup' },
+  { step: 1, title: 'Company', path: '/admin/setup' },
   { step: 2, title: 'Departments', path: '/admin/setup/departments' },
-  { step: 3, title: 'Employees', path: '/admin/setup/employees' },
-  { step: 4, title: 'Supervisors', path: '/admin/setup/supervisors' },
-  { step: 5, title: 'Review', path: '/admin/setup/review' },
+  { step: 3, title: 'People', path: '/admin/setup/people' },
+  { step: 4, title: 'Settings', path: '/admin/setup/settings' },
 ] as const
 
 /**
@@ -197,7 +215,7 @@ export function getStepPath(step: number): string {
  * Get the next step number
  */
 export function getNextStep(currentStep: number): number {
-  return Math.min(currentStep + 1, 5)
+  return Math.min(currentStep + 1, 4)
 }
 
 /**
@@ -215,7 +233,6 @@ export function canAccessStep(state: OnboardingState, step: number): boolean {
   if (step === 2) return isValidOrganization(state.organization)
   if (step === 3) return isValidOrganization(state.organization) && state.departments.length > 0
   if (step === 4) return isValidOrganization(state.organization) && state.departments.length > 0 && state.employees.length > 0
-  if (step === 5) return isValidOrganization(state.organization) && state.departments.length > 0 && state.employees.length > 0
   return false
 }
 
@@ -237,9 +254,6 @@ export function getStepValidation(state: OnboardingState): Record<number, { vali
       message: state.employees.length === 0 ? 'Please add at least one employee' : undefined
     },
     4: {
-      valid: true, // Supervisor assignment is optional
-    },
-    5: {
       valid: isValidOrganization(state.organization) && state.departments.length > 0 && state.employees.length > 0,
       message: 'Please complete all previous steps'
     }
@@ -272,4 +286,31 @@ export const TIMEZONES = [
   { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
   { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
   { value: 'UTC', label: 'UTC' },
+]
+
+// Industry options
+export const INDUSTRIES = [
+  { value: 'service_field', label: 'Service & Field Operations' },
+  { value: 'logistics', label: 'Logistics & Dispatch' },
+  { value: 'trades', label: 'Trades & Construction' },
+  { value: 'retail', label: 'Retail' },
+  { value: 'hospitality', label: 'Hospitality & Food Service' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'professional_services', label: 'Professional Services' },
+  { value: 'manufacturing', label: 'Manufacturing' },
+  { value: 'technology', label: 'Technology' },
+  { value: 'education', label: 'Education' },
+  { value: 'nonprofit', label: 'Nonprofit' },
+  { value: 'other', label: 'Other' },
+]
+
+// Days of the week for scheduling
+export const DAYS_OF_WEEK = [
+  { value: 'monday', label: 'Monday' },
+  { value: 'tuesday', label: 'Tuesday' },
+  { value: 'wednesday', label: 'Wednesday' },
+  { value: 'thursday', label: 'Thursday' },
+  { value: 'friday', label: 'Friday' },
+  { value: 'saturday', label: 'Saturday' },
+  { value: 'sunday', label: 'Sunday' },
 ]

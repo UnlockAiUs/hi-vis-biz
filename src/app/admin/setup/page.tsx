@@ -27,6 +27,7 @@ import {
   INITIAL_ONBOARDING_STATE,
   TIMEZONES,
   SIZE_BANDS,
+  INDUSTRIES,
   type OnboardingState,
   type OrganizationData
 } from '@/lib/utils/onboarding-wizard'
@@ -40,6 +41,7 @@ export default function SetupStep1Page() {
     name: '',
     timezone: 'America/Denver',
     sizeBand: '11-50',
+    industry: '',
   })
 
   const supabase = createBrowserClient(
@@ -107,6 +109,11 @@ export default function SetupStep1Page() {
       return
     }
 
+    if (!formData.industry) {
+      setError('Please select an industry')
+      return
+    }
+
     setError(null)
 
     // Save to wizard state
@@ -117,6 +124,7 @@ export default function SetupStep1Page() {
         name: formData.name.trim(),
         timezone: formData.timezone,
         sizeBand: formData.sizeBand,
+        industry: formData.industry,
       },
     }
     
@@ -140,10 +148,10 @@ export default function SetupStep1Page() {
       {/* Step Header */}
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-gray-900">
-          Create Your Organization
+          Company Basics
         </h2>
         <p className="mt-2 text-gray-600">
-          Step 1 of 5: Enter your organization details
+          Step 1 of 4: Tell us about your organization
         </p>
       </div>
 
@@ -200,7 +208,7 @@ export default function SetupStep1Page() {
           {/* Organization Size */}
           <div>
             <label htmlFor="sizeBand" className="block text-sm font-medium text-gray-700">
-              Organization Size <span className="text-red-500">*</span>
+              Team Size <span className="text-red-500">*</span>
             </label>
             <select
               id="sizeBand"
@@ -215,7 +223,30 @@ export default function SetupStep1Page() {
               ))}
             </select>
             <p className="mt-1 text-xs text-gray-500">
-              Helps us tailor the experience to your organization
+              Approximate number of people in your organization
+            </p>
+          </div>
+
+          {/* Industry */}
+          <div>
+            <label htmlFor="industry" className="block text-sm font-medium text-gray-700">
+              Industry <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="industry"
+              value={formData.industry}
+              onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+            >
+              <option value="">Select your industry</option>
+              {INDUSTRIES.map((ind) => (
+                <option key={ind.value} value={ind.value}>
+                  {ind.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Helps us customize check-in questions for your business
             </p>
           </div>
         </div>
@@ -242,14 +273,14 @@ export default function SetupStep1Page() {
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-blue-800">
-              What happens next?
+              Quick setup, big visibility
             </h3>
             <div className="mt-2 text-sm text-blue-700">
               <ul className="list-disc pl-5 space-y-1">
-                <li>You&apos;ll create your departments</li>
-                <li>Add employees (manually or via CSV)</li>
-                <li>Assign supervisors</li>
-                <li>Review and send invites</li>
+                <li>Add your departments</li>
+                <li>Import your team (CSV or manual)</li>
+                <li>Configure check-in schedule</li>
+                <li>Start collecting dots!</li>
               </ul>
             </div>
           </div>
