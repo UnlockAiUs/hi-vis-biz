@@ -18,12 +18,19 @@ export default async function BillingPage() {
     .in('role', ['owner', 'admin'])
     .maybeSingle()
   
-  const org = membership?.organizations as {
+  const organizations = membership?.organizations as {
     name: string
     trial_ends_at?: string
     trial_started_at?: string
     subscription_status?: string
-  } | null
+  } | {
+    name: string
+    trial_ends_at?: string
+    trial_started_at?: string
+    subscription_status?: string
+  }[] | null
+  
+  const org = Array.isArray(organizations) ? organizations[0] : organizations
   
   // Calculate trial info
   let trialDaysRemaining = 0
