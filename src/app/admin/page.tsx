@@ -46,9 +46,10 @@ export default async function AdminDashboardPage() {
   }
 
   const orgId = membership.org_id
-  // Handle the organization data - Supabase returns related data as object
-  const orgData = membership.organizations as unknown as { name: string; subscription_status: string; trial_ends_at: string } | null
-  const orgName = orgData?.name || 'Your Organization'
+  // Handle the organization data - Supabase types foreign key relations as arrays
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const orgDataRaw = membership.organizations as any
+  const orgName = (Array.isArray(orgDataRaw) ? orgDataRaw[0]?.name : orgDataRaw?.name) || 'Your Organization'
 
   // Get today's date range
   const today = new Date()
