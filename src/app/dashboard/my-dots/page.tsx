@@ -85,7 +85,7 @@ export default async function MyDotsPage() {
   }
 
   // Get unique themes (top 5)
-  const uniqueThemes = [...new Set(themes)].slice(0, 5)
+  const uniqueThemes = Array.from(new Set(themes)).slice(0, 5)
 
   // Calculate stats
   const totalDots = completedDots?.length || 0
