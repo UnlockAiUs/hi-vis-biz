@@ -8,12 +8,12 @@
 
 ## META
 ```yaml
-version: 1.3.0
+version: 1.4.0
 last_updated: 2025-11-27
 last_agent: cline
 purpose: SINGLE SOURCE OF TRUTH for all AI agents working on this project
 format: optimized for AI token efficiency
-documentation_status: COMPLETE - all 64 code files documented
+documentation_status: COMPLETE - all 65 code files documented
 rebrand_status: COMPLETE - rebranded from Hi-Vis Biz to VizDots
 ```
 
@@ -229,6 +229,7 @@ VizDots Terminology:
 | `src/app/admin/members/page.tsx` | Member management | List, invite, edit, deactivate members |
 | `src/app/admin/org-chart/page.tsx` | Organization chart | Hierarchical view of org structure |
 | `src/app/admin/settings/page.tsx` | Organization settings | Org name, timezone, scheduling preferences |
+| `src/app/admin/workflows/page.tsx` | Workflows page | Shows detected workflows from check-ins, grouped by department |
 
 ### Admin Setup Wizard (4 Steps)
 
@@ -427,7 +428,7 @@ After auth success:
 - [x] `src/app/dashboard/my-dots/page.tsx`
 - [x] `src/app/dashboard/session/[id]/page.tsx`
 
-### ✅ Admin Pages (10 files)
+### ✅ Admin Pages (11 files)
 - [x] `src/app/admin/layout.tsx`
 - [x] `src/app/admin/page.tsx`
 - [x] `src/app/admin/AdminSidebar.tsx`
@@ -437,6 +438,7 @@ After auth success:
 - [x] `src/app/admin/members/page.tsx`
 - [x] `src/app/admin/org-chart/page.tsx`
 - [x] `src/app/admin/settings/page.tsx`
+- [x] `src/app/admin/workflows/page.tsx`
 
 ### ✅ Admin Setup Wizard (8 files - 5 active, 3 legacy)
 - [x] `src/app/admin/setup/layout.tsx`
@@ -556,3 +558,22 @@ find supabase/migrations -name "*.sql" | wc -l
   - File count: 62 → 64 TypeScript/TSX files (2 new pages)
   - Version bumped to 1.3.0
   - Phase 2 progress: Admin Onboarding Wizard COMPLETE
+2025-11-27 cline - Enhanced Admin Dashboard (Phase 2):
+  - Updated src/app/admin/page.tsx:
+    - Added \"Today\" section with gradient blue header
+    - Shows Dots Today (completed vs expected) with progress bar
+    - Shows Participation Rate percentage for the week
+    - Shows Top 3 Themes extracted from recent answers
+    - Updated stats grid to 3 columns
+    - Added Settings quick action
+  - Created src/app/admin/workflows/page.tsx:
+    - Shows detected workflows from workflow_mapper outputs
+    - Groups workflows by department
+    - Displays workflow steps and tools used
+    - Empty state with invite CTA
+    - Beta label to set expectations
+  - Updated src/app/admin/AdminSidebar.tsx:
+    - Added Workflows nav item between Org Chart and Analytics
+  - File count: 64 → 65 TypeScript/TSX files (1 new page)
+  - Version bumped to 1.4.0
+  - Phase 2 progress: Admin Dashboard Structure COMPLETE
