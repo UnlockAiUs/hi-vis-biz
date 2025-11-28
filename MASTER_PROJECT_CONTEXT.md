@@ -8,19 +8,17 @@
 
 ## META
 ```yaml
-version: 1.7.0
-last_updated: 2025-11-27
+version: 2.0.0
+last_updated: 2025-11-28
 last_agent: cline
 purpose: SINGLE SOURCE OF TRUTH for all AI agents working on this project
 format: optimized for AI token efficiency
-documentation_status: COMPLETE - all 70 code files documented
+documentation_status: COMPLETE - all 71 code files + 12 SQL migrations documented
+execution_plan_status: Phases 1-9 COMPLETE, Phases 10-12 pending (require human credentials)
 rebrand_status: COMPLETE - rebranded from Hi-Vis Biz to VizDots
-early_warning_signals: COMPLETE - Phase 5 analytics feature added
-ai_test_lab: COMPLETE - Phase 3 admin AI testing page added
-error_handling: COMPLETE - Phase 6 error boundary and global error page added
-ai_logging: COMPLETE - Phase 3 AI call logging system added
-rate_limiting: COMPLETE - Phase 6 rate limiting utility added
-marketing_page: COMPLETE - Phase 7 full landing page with all sections
+test_framework: COMPLETE - Vitest (unit) + Playwright (E2E)
+design_system: COMPLETE - CSS custom properties, button/input/card components
+accessibility: COMPLETE - Skip links, ARIA labels, 44px touch targets
 ```
 
 ## CRITICAL RULES FOR AI AGENTS
@@ -52,6 +50,7 @@ styling: Tailwind CSS
 auth: Supabase Auth
 db: PostgreSQL via Supabase
 hosting: Vercel (auto-deploy from GitHub)
+repository: https://github.com/UnlockAiUs/hi-vis-biz.git
 ```
 
 ## CORE CONCEPT
@@ -70,9 +69,10 @@ VizDots Terminology:
 | Role | Entry Point | Destination | Capabilities |
 |------|-------------|-------------|--------------|
 | New Org Owner | /auth/register | /admin/setup | Create org via 4-step wizard |
-| Invited Employee | Email link | /onboarding | Confirm info, start micro-sessions |
+| Invited Employee | Email link | /auth/set-password → /onboarding | Set password, confirm info, start micro-sessions |
 | Returning Admin | /auth/login | /admin | Manage org, view analytics |
 | Returning Employee | /auth/login | /dashboard | Complete micro-sessions |
+| Password Recovery | /auth/login (forgot) | /auth/set-password | Reset password via email |
 
 ---
 
@@ -116,8 +116,12 @@ VizDots Terminology:
 │   │   ├── supabase/           # Supabase clients
 │   │   └── utils/              # Utility functions
 │   └── types/                  # TypeScript types
-├── supabase/migrations/        # Database migrations (001-010)
-└── config files                # next.config.js, tailwind.config.ts, etc.
+├── supabase/migrations/        # Database migrations (001-012)
+├── tests/                      # Test files
+│   ├── setup.ts                # Test configuration
+│   ├── unit/                   # Vitest unit tests
+│   └── e2e/                    # Playwright E2E tests
+└── config files                # next.config.js, tailwind.config.ts, vitest.config.ts, playwright.config.ts, etc.
 ```
 
 ---
@@ -127,7 +131,7 @@ VizDots Terminology:
 ### Core Tables
 | Table | Purpose | Key Columns |
 |-------|---------|-------------|
-| `organizations` | Tenant orgs | id, name, timezone, size_band, trial_*, subscription_*, stripe_* |
+| `organizations` | Tenant orgs | id, name, timezone, size_band, trial_*, subscription_*, stripe_*, setup_completed_at |
 | `departments` | Org departments | id, org_id, name |
 | `organization_members` | User-org relationship | id, org_id, user_id, role, level, department_id, supervisor_user_id, status, display_name, job_title, has_direct_reports, can_view_reports, invite_* |
 | `user_profiles` | JSONB profile per user | id, org_id, user_id, profile_json, version |
@@ -137,10 +141,15 @@ VizDots Terminology:
 |-------|---------|
 | `agents` | 5 AI agent definitions |
 | `topic_archetypes` | Question types per agent |
-| `sessions` | Scheduled micro-sessions |
+| `sessions` | Scheduled micro-sessions (with idempotence constraint) |
 | `session_topics` | Topics in session |
 | `answers` | Responses + transcripts |
 | `user_topic_history` | Topic tracking |
+| `ai_logs` | AI call logging for debugging |
+
+### Sessions Table Constraints
+- **Idempotence Constraint (012):** Unique partial index on `(user_id, agent_code, scheduled_for::date)` WHERE `completed_at IS NULL`
+- Prevents duplicate session creation when scheduler runs multiple times
 
 ### Organization Members Roles
 - `role`: owner | admin | member
@@ -176,7 +185,7 @@ VizDots Terminology:
 |------|---------|---------|
 | `src/lib/ai/openai.ts` | OpenAI client singleton | getOpenAIClient, createChatCompletion, createConversation, AI_CONFIG |
 | `src/lib/ai/agents/base.ts` | Agent interfaces/types | AgentCode, Agent interface, AgentContext, buildContextPrompt, hasMinimumInfo |
-| `src/lib/ai/agents/index.ts` | Agent registry & router | getAgent, agentMetadata |
+| `src/lib/ai/agents/index.ts` | Agent registry & router | getAgent, agentMetadata (with icons) |
 | `src/lib/ai/agents/pulse.ts` | Morale/workload agent | PulseAgent, pulseAgent |
 | `src/lib/ai/agents/role-mapper.ts` | Role discovery agent | RoleMapperAgent, roleMapperAgent |
 | `src/lib/ai/agents/workflow-mapper.ts` | Process mapping agent | WorkflowMapperAgent, workflowMapperAgent |
@@ -198,7 +207,7 @@ VizDots Terminology:
 
 | File | Purpose | Exports |
 |------|---------|---------|
-| `src/components/auth/HashHandler.tsx` | URL hash auth token handler | default HashHandler |
+| `src/components/auth/HashHandler.tsx` | URL hash auth token handler (invite/recovery) | default HashHandler |
 | `src/components/ui/LoadingSpinner.tsx` | Loading spinners | LoadingSpinner, ButtonLoading |
 | `src/components/ui/Toast.tsx` | Toast notifications | ToastProvider, useToast |
 | `src/components/ui/Skeleton.tsx` | Loading placeholders | Skeleton, SkeletonCard, SkeletonTable, etc. |
@@ -209,36 +218,37 @@ VizDots Terminology:
 
 | File | Purpose | Key Logic |
 |------|---------|-----------|
-| `src/app/auth/login/page.tsx` | Login form UI | Email/password form, calls signIn action |
+| `src/app/auth/login/page.tsx` | Login form UI | Email/password form, **forgot password flow** with resetPasswordForEmail |
 | `src/app/auth/register/page.tsx` | Registration form UI | Email/password form, calls signUp action |
 | `src/app/auth/actions.ts` | Server actions for auth | signIn, signUp, signOut functions |
 | `src/app/auth/callback/route.ts` | OAuth/magic link callback | Exchanges code, routes based on membership role |
-| `src/app/auth/set-password/page.tsx` | Set password for invited users | Handles invite token, sets initial password |
+| `src/app/auth/set-password/page.tsx` | Set password for invited/recovery users | Handles invite token AND password recovery |
 | `src/app/auth/auth-code-error/page.tsx` | Auth error display | Shows error message with retry link |
 
 ### Dashboard Pages
 
 | File | Purpose | Key Logic |
 |------|---------|-----------|
-| `src/app/dashboard/layout.tsx` | Dashboard layout wrapper | Auth check, navigation structure |
-| `src/app/dashboard/page.tsx` | Employee main dashboard | Lists pending/completed sessions, profile summary, link to My Dots |
-| `src/app/dashboard/my-dots/page.tsx` | \"My Dots\" history page | Shows all completed check-ins with color-coded dots, stats, themes |
-| `src/app/dashboard/session/[id]/page.tsx` | Micro-session chat interface | Real-time AI conversation, message input/display |
+| `src/app/dashboard/layout.tsx` | Dashboard layout wrapper | Auth check, navigation, **no-membership handling** with friendly UI |
+| `src/app/dashboard/page.tsx` | Employee main dashboard | Lists pending/completed sessions, agent icons, **Day 0 empty state** |
+| `src/app/dashboard/my-dots/page.tsx` | "My Dots" history page | Shows all completed check-ins with color-coded dots, stats, themes |
+| `src/app/dashboard/session/[id]/page.tsx` | Micro-session chat interface | Real-time AI conversation, **completed session state handling** |
 
 ### Admin Pages
 
 | File | Purpose | Key Logic |
 |------|---------|-----------|
-| `src/app/admin/layout.tsx` | Admin layout with sidebar | Auth + role check (admin/owner), AdminSidebar |
-| `src/app/admin/page.tsx` | Admin dashboard overview | Org stats, recent activity, quick actions |
-| `src/app/admin/AdminSidebar.tsx` | Navigation sidebar component | Links to all admin sections, active state |
+| `src/app/admin/layout.tsx` | Admin layout with sidebar | Auth + role check, **403 access denied page** for non-admin users |
+| `src/app/admin/page.tsx` | Admin dashboard overview | Org stats, **resume setup banner**, early warning signals with actionable suggestions |
+| `src/app/admin/AdminSidebar.tsx` | Navigation sidebar component | Links to all admin sections, **ARIA labels**, keyboard navigation, mobile drawer |
 | `src/app/admin/analytics/page.tsx` | Analytics dashboard | Org-wide metrics, department breakdowns, charts |
-| `src/app/admin/billing/page.tsx` | Billing & subscription | Trial status, plan details, Stripe integration placeholder |
+| `src/app/admin/billing/page.tsx` | Billing & subscription | Trial status, plan details, **"Contact us to upgrade" CTA** |
 | `src/app/admin/departments/page.tsx` | Department management | CRUD departments, member counts |
 | `src/app/admin/members/page.tsx` | Member management | List, invite, edit, deactivate members |
 | `src/app/admin/org-chart/page.tsx` | Organization chart | Hierarchical view of org structure |
 | `src/app/admin/settings/page.tsx` | Organization settings | Org name, timezone, scheduling preferences |
 | `src/app/admin/workflows/page.tsx` | Workflows page | Shows detected workflows from check-ins, grouped by department |
+| `src/app/admin/ai-test-lab/page.tsx` | AI agent testing sandbox | **Sandbox banner**, test all 5 agents, sample prompts |
 
 ### Admin Setup Wizard (4 Steps)
 
@@ -255,6 +265,16 @@ VizDots Terminology:
 | File | Purpose | Key Logic |
 |------|---------|-----------|
 | `src/app/onboarding/page.tsx` | Employee onboarding flow | Confirm details, intro to AI sessions |
+
+### Root App Files
+
+| File | Purpose | Key Logic |
+|------|---------|-----------|
+| `src/app/layout.tsx` | Root HTML layout | HashHandler, **skip link for accessibility**, Tailwind styles |
+| `src/app/page.tsx` | Landing page | Marketing content, CTA buttons, responsive design |
+| `src/app/globals.css` | Global styles | Tailwind imports, **design system** (buttons, inputs, cards, alerts, touch targets) |
+| `src/app/error.tsx` | Global error boundary | Human-friendly error message, "Try Again" and "Go Home" buttons |
+| `src/app/not-found.tsx` | Custom 404 page | Branded "We couldn't find that page" with CTAs to dashboard/home |
 
 ### API Routes - Sessions
 
@@ -273,6 +293,7 @@ VizDots Terminology:
 | `src/app/api/admin/members/route.ts` | Member CRUD | GET, POST, PATCH, DELETE | Member management operations |
 | `src/app/api/admin/invite/route.ts` | Invite members | POST | Sends email invites to employees |
 | `src/app/api/admin/settings/route.ts` | Org settings | GET, PUT | Read/update org settings |
+| `src/app/api/admin/ai-test/route.ts` | AI test lab endpoint | POST | Test agents with sample input |
 
 ### API Routes - Analytics
 
@@ -291,15 +312,17 @@ VizDots Terminology:
 
 | File | Purpose | Exports | Key Logic |
 |------|---------|---------|-----------|
-| `src/app/api/internal/scheduler/route.ts` | Cron session scheduler | POST | Creates scheduled sessions, requires SCHEDULER_SECRET |
+| `src/app/api/internal/scheduler/route.ts` | Cron session scheduler | POST | Creates scheduled sessions, requires SCHEDULER_SECRET, idempotent |
 
-### Root App Files
+### Test Infrastructure
 
 | File | Purpose | Key Logic |
 |------|---------|-----------|
-| `src/app/layout.tsx` | Root HTML layout | HashHandler, Tailwind styles |
-| `src/app/page.tsx` | Landing page | Marketing content, CTA buttons |
-| `src/app/globals.css` | Global styles | Tailwind imports, CSS variables |
+| `vitest.config.ts` | Vitest configuration | jsdom environment, path aliases, coverage config |
+| `playwright.config.ts` | Playwright configuration | Multi-browser testing, mobile devices, auto-start dev server |
+| `tests/setup.ts` | Test setup | Mock environment variables, global fetch mock |
+| `tests/unit/scheduler.test.ts` | Scheduler unit tests | Session determination, idempotence, agent rotation, rate limiter |
+| `tests/e2e/auth.spec.ts` | Auth E2E tests | Login, register, protected routes, 404, accessibility |
 
 ### Database Migrations (in order)
 
@@ -316,6 +339,22 @@ VizDots Terminology:
 | `009_enhanced_onboarding.sql` | Onboarding improvements |
 | `010_subscription_trial.sql` | Trial/subscription fields |
 | `011_ai_logs.sql` | AI call logging table for debugging |
+| `012_scheduler_idempotence.sql` | **Unique constraint for scheduler idempotence** - prevents duplicate sessions |
+
+---
+
+## PROJECT DOCUMENTATION FILES
+
+| File | Purpose | Key Content |
+|------|---------|-------------|
+| `MASTER_PROJECT_CONTEXT.md` | Single source of truth for AI agents | This file - architecture, patterns, file docs |
+| `SPEC.md` | Original product specification | Requirements and feature definitions |
+| `FINAL_EXECUTION_PLAN.md` | 12-phase production-ready plan | Phases 1-9 complete, 10-12 pending |
+| `BUGLOG.md` | Bug tracking and resolution | All P0/P1 bugs resolved |
+| `MANUAL_TEST_SCRIPT.md` | Founder testing guide | Step-by-step manual test flows |
+| `FOUNDER_GUIDE.md` | Non-technical operations guide | How to use VizDots as an admin |
+| `EXECUTION_PLAN.md` | Original execution plan | Superseded by FINAL_EXECUTION_PLAN.md |
+| `PRODUCTION_READY_EXECUTION_PLAN.md` | Production-ready plan | Superseded by FINAL_EXECUTION_PLAN.md |
 
 ---
 
@@ -337,13 +376,17 @@ const { data: { user } } = await supabase.auth.getUser()
 if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 ```
 
-### Get User's Org Membership
+### Get User's Org Membership (with proper FK handling)
 ```typescript
 const { data: member } = await supabase
   .from('organization_members')
-  .select('org_id, role, level')
+  .select('org_id, role, level, department:departments(name)')
   .eq('user_id', user.id)
-  .single()
+  .maybeSingle() // Use maybeSingle() to avoid errors when no record
+
+// FK relations return arrays, handle with:
+const deptRaw = member?.department as any
+const deptName = Array.isArray(deptRaw) ? deptRaw[0]?.name : deptRaw?.name
 ```
 
 ### AI Agent Call
@@ -351,6 +394,18 @@ const { data: member } = await supabase
 import { getAgent } from '@/lib/ai/agents'
 const agent = getAgent(session.agent_code)
 const response = await agent.chat(messages, context)
+```
+
+### Design System Button Classes
+```css
+/* Primary actions */
+.btn-primary { /* Blue button */ }
+.btn-secondary { /* White/gray button */ }
+.btn-brand { /* Yellow brand button */ }
+.btn-ghost { /* Transparent text button */ }
+.btn-danger { /* Red danger button */ }
+
+/* All buttons have 44px min-height for touch targets */
 ```
 
 ---
@@ -362,7 +417,13 @@ const response = await agent.chat(messages, context)
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server | Admin operations |
 | `OPENAI_API_KEY` | Server | AI agent calls |
-| `SCHEDULER_SECRET` | Server | Cron job auth |
+| `SCHEDULER_SECRET` | Server | Cron job auth for /api/internal/scheduler |
+| `SCHEDULER_REMINDERS_SECRET` | Server | (Phase 10) Reminder cron job auth |
+| `STRIPE_SECRET_KEY` | Server | (Phase 11) Stripe API |
+| `STRIPE_PRICE_ID` | Server | (Phase 11) Subscription price |
+| `STRIPE_WEBHOOK_SECRET` | Server | (Phase 11) Webhook signature |
+| `EMAIL_PROVIDER_API_KEY` | Server | (Phase 10) Email sending |
+| `EMAIL_FROM` | Server | (Phase 10) Sender address |
 
 ---
 
@@ -371,8 +432,9 @@ const response = await agent.chat(messages, context)
 ### Auth Callback Smart Routing
 ```
 After auth success:
-1. Check for invite type → handle invite flow
-2. Check organization_members record:
+1. Check for invite type → handle invite flow → /auth/set-password
+2. Check for recovery type → handle password reset → /auth/set-password
+3. Check organization_members record:
    - NO record → NEW USER → /admin/setup
    - role=owner/admin → /admin
    - role=member → check profile → /dashboard or /onboarding
@@ -383,11 +445,14 @@ After auth success:
 - `/dashboard/*` - requires auth
 - `/onboarding` - requires auth
 
----
+### Access Control
+- Non-admin users accessing `/admin/*` → 403 access denied page
+- Users without org membership → Friendly "no team connected" UI
+- Logged out users → Redirect to `/auth/login`
 
 ---
 
-## COMPLETE FILE CHECKLIST (70 TypeScript/TSX + 11 SQL)
+## COMPLETE FILE CHECKLIST (71 TypeScript/TSX + 12 SQL + 5 Test Files)
 
 ### ✅ Core Infrastructure (4 files)
 - [x] `src/middleware.ts`
@@ -425,31 +490,31 @@ After auth success:
 - [x] `src/components/ui/ErrorBoundary.tsx`
 
 ### ✅ Auth Pages (6 files)
-- [x] `src/app/auth/login/page.tsx`
+- [x] `src/app/auth/login/page.tsx` - **includes forgot password flow**
 - [x] `src/app/auth/register/page.tsx`
 - [x] `src/app/auth/actions.ts`
 - [x] `src/app/auth/callback/route.ts`
-- [x] `src/app/auth/set-password/page.tsx`
+- [x] `src/app/auth/set-password/page.tsx` - **handles invite + recovery**
 - [x] `src/app/auth/auth-code-error/page.tsx`
 
 ### ✅ Dashboard Pages (4 files)
-- [x] `src/app/dashboard/layout.tsx`
-- [x] `src/app/dashboard/page.tsx`
+- [x] `src/app/dashboard/layout.tsx` - **no-membership handling**
+- [x] `src/app/dashboard/page.tsx` - **Day 0 empty state**
 - [x] `src/app/dashboard/my-dots/page.tsx`
-- [x] `src/app/dashboard/session/[id]/page.tsx`
+- [x] `src/app/dashboard/session/[id]/page.tsx` - **completed session handling**
 
 ### ✅ Admin Pages (11 files)
-- [x] `src/app/admin/layout.tsx`
-- [x] `src/app/admin/page.tsx`
-- [x] `src/app/admin/AdminSidebar.tsx`
+- [x] `src/app/admin/layout.tsx` - **403 access denied for non-admins**
+- [x] `src/app/admin/page.tsx` - **resume setup banner, early warnings**
+- [x] `src/app/admin/AdminSidebar.tsx` - **ARIA labels, keyboard nav**
 - [x] `src/app/admin/analytics/page.tsx`
-- [x] `src/app/admin/billing/page.tsx`
+- [x] `src/app/admin/billing/page.tsx` - **contact us CTA**
 - [x] `src/app/admin/departments/page.tsx`
 - [x] `src/app/admin/members/page.tsx`
 - [x] `src/app/admin/org-chart/page.tsx`
 - [x] `src/app/admin/settings/page.tsx`
 - [x] `src/app/admin/workflows/page.tsx`
-- [x] `src/app/admin/ai-test-lab/page.tsx`
+- [x] `src/app/admin/ai-test-lab/page.tsx` - **sandbox banner**
 
 ### ✅ Admin Setup Wizard (5 files)
 - [x] `src/app/admin/setup/layout.tsx`
@@ -461,13 +526,14 @@ After auth success:
 ### ✅ Onboarding (1 file)
 - [x] `src/app/onboarding/page.tsx`
 
-### ✅ Root App (4 files)
-- [x] `src/app/layout.tsx`
+### ✅ Root App (5 files)
+- [x] `src/app/layout.tsx` - **skip link for accessibility**
 - [x] `src/app/page.tsx`
-- [x] `src/app/globals.css`
+- [x] `src/app/globals.css` - **design system**
 - [x] `src/app/error.tsx`
+- [x] `src/app/not-found.tsx` - **custom branded 404**
 
-### ✅ API Routes (11 files)
+### ✅ API Routes (13 files)
 - [x] `src/app/api/sessions/route.ts`
 - [x] `src/app/api/sessions/[id]/route.ts`
 - [x] `src/app/api/sessions/[id]/messages/route.ts`
@@ -476,13 +542,13 @@ After auth success:
 - [x] `src/app/api/admin/members/route.ts`
 - [x] `src/app/api/admin/invite/route.ts`
 - [x] `src/app/api/admin/settings/route.ts`
+- [x] `src/app/api/admin/ai-test/route.ts`
 - [x] `src/app/api/analytics/org/route.ts`
 - [x] `src/app/api/analytics/departments/route.ts`
 - [x] `src/app/api/auth/link-invite/route.ts`
 - [x] `src/app/api/internal/scheduler/route.ts`
-- [x] `src/app/api/admin/ai-test/route.ts`
 
-### ✅ SQL Migrations (11 files)
+### ✅ SQL Migrations (12 files)
 - [x] `supabase/migrations/001_initial_schema.sql`
 - [x] `supabase/migrations/002_agents_sessions.sql`
 - [x] `supabase/migrations/003_user_profiles.sql`
@@ -494,17 +560,34 @@ After auth success:
 - [x] `supabase/migrations/009_enhanced_onboarding.sql`
 - [x] `supabase/migrations/010_subscription_trial.sql`
 - [x] `supabase/migrations/011_ai_logs.sql`
+- [x] `supabase/migrations/012_scheduler_idempotence.sql` - **scheduler idempotence constraint**
+
+### ✅ Test Files (5 files)
+- [x] `vitest.config.ts`
+- [x] `playwright.config.ts`
+- [x] `tests/setup.ts`
+- [x] `tests/unit/scheduler.test.ts`
+- [x] `tests/e2e/auth.spec.ts`
 
 ---
 
-## VERIFICATION COMMAND
-Run this to verify all files exist:
-```bash
-find src -name "*.ts" -o -name "*.tsx" | wc -l
-# Should output: 70
-find supabase/migrations -name "*.sql" | wc -l
-# Should output: 11
-```
+## EXECUTION STATUS
+
+### Completed Phases (FINAL_EXECUTION_PLAN.md)
+- **Phase 1:** Baseline Snapshot & Bug Backlog ✅
+- **Phase 2:** Core Micro-Session Experience ✅
+- **Phase 3:** Auth, Onboarding, Password Recovery ✅
+- **Phase 4:** Admin Experience ✅
+- **Phase 5:** Scheduler & Data Integrity (incl. idempotence) ✅
+- **Phase 6:** AI Reliability & Logging ✅
+- **Phase 7:** Responsive Design & Accessibility ✅
+- **Phase 8:** Automated & Manual Test Harness ✅
+- **Phase 9:** Pre-Integration Perfection Audit ✅
+
+### Pending Phases (Require Human Credentials 🔑)
+- **Phase 10:** Outbound Email (Email provider setup)
+- **Phase 11:** Stripe Billing (Stripe dashboard setup)
+- **Phase 12:** Final Documentation & Go-Live Checklist
 
 ---
 
@@ -513,136 +596,25 @@ find supabase/migrations -name "*.sql" | wc -l
 ```
 2025-11-26 cline - Created MASTER_PROJECT_CONTEXT.md, initial structure
 2025-11-26 cline - Added AI agent instruction headers to ALL 61 code files
-2025-11-27 cline - COMPLETED full documentation of all files:
-  - Added Auth Pages section (6 files)
-  - Added Dashboard Pages section (3 files)
-  - Added Admin Pages section (10 files)
-  - Added Admin Setup Wizard section (6 files)
-  - Added Onboarding section (1 file)
-  - Added Root App Files section (3 files)
-  - Added complete API Routes documentation (11 files)
-  - Added COMPLETE FILE CHECKLIST with all 61+10 files
-  - Added verification command
-  - Version bumped to 1.1.0
-  - Status: DOCUMENTATION COMPLETE
-2025-11-27 cline - COMPLETED Phase 1 Rebrand (Hi-Vis Biz → VizDots):
-  - Updated 11 files with VizDots branding
-  - Files modified: layout.tsx, page.tsx, login, register, dashboard layout, 
-    onboarding, AdminSidebar, admin setup layout, admin page, invite route, 
-    onboarding-wizard.ts
-  - Updated messaging: "See Your Business Clearly — One Dot at a Time"
-  - Updated CTA: "Start Free → 30 Days On Us"
-  - Updated footer: "Small inputs. Big visibility. Real improvement."
-  - Updated localStorage key: hivisbiz_onboarding_state → vizdots_onboarding_state
-  - Updated invite URL fallback: hi-vis-biz.vercel.app → vizdots.com
-  - Updated support email: support@vizdots.com
-  - Version bumped to 1.2.0
-  - Status: REBRAND COMPLETE
-2025-11-27 cline - Added My Dots page (Phase 2 Employee Flow):
-  - Created src/app/dashboard/my-dots/page.tsx
-  - Shows all completed sessions (dots) with color-coded indicators by agent type
-  - Displays stats: Total Dots, This Week, This Month
-  - Extracts and displays top themes from recent answers
-  - Info card explaining "What are dots?"
-  - Updated src/app/dashboard/page.tsx with link to My Dots
-  - File count: 61 → 62 TypeScript/TSX files
-  - Phase 2 progress: Employee Flow Improvements - My Dots COMPLETE
-2025-11-27 cline - Added Employee Welcome Screen (Phase 2):
-  - Modified src/app/onboarding/page.tsx
-  - Added 2-step flow: welcome → form
-  - Welcome screen explains VizDots: 1-minute check-ins, dots concept, team benefits
-  - Shows organization name (if invited to existing org)
-  - "Let's Get Started" CTA transitions to profile form
-  - Phase 2 progress: Employee Welcome Screen COMPLETE
-2025-11-27 cline - Refactored Admin Onboarding Wizard (5 → 4 steps):
-  - Updated src/lib/utils/onboarding-wizard.ts:
-    - Added industry field and INDUSTRIES constant
-    - Added ScheduleSettings interface with frequency, days, time window
-    - Changed currentStep type from 1-5 to 1-4
-    - Updated WIZARD_STEPS to 4 steps: Company → Departments → People → Settings
-  - Updated src/app/admin/setup/page.tsx: Added industry dropdown, "Company Basics" title
-  - Updated src/app/admin/setup/departments/page.tsx: "Departments & Roles", nav to /people
-  - Created src/app/admin/setup/people/page.tsx: CSV upload + manual entry
-  - Created src/app/admin/setup/settings/page.tsx: Check-in settings + review + launch
-  - Updated src/app/admin/setup/layout.tsx: 4-step progress indicator
-  - Legacy files kept but unused: employees, supervisors, review pages
-  - File count: 62 → 64 TypeScript/TSX files (2 new pages)
-  - Version bumped to 1.3.0
-  - Phase 2 progress: Admin Onboarding Wizard COMPLETE
-2025-11-27 cline - Enhanced Admin Dashboard (Phase 2):
-  - Updated src/app/admin/page.tsx:
-    - Added \"Today\" section with gradient blue header
-    - Shows Dots Today (completed vs expected) with progress bar
-    - Shows Participation Rate percentage for the week
-    - Shows Top 3 Themes extracted from recent answers
-    - Updated stats grid to 3 columns
-    - Added Settings quick action
-  - Created src/app/admin/workflows/page.tsx:
-    - Shows detected workflows from workflow_mapper outputs
-    - Groups workflows by department
-    - Displays workflow steps and tools used
-    - Empty state with invite CTA
-    - Beta label to set expectations
-  - Updated src/app/admin/AdminSidebar.tsx:
-    - Added Workflows nav item between Org Chart and Analytics
-  - File count: 64 → 65 TypeScript/TSX files (1 new page)
-  - Version bumped to 1.4.0
-  - Phase 2 progress: Admin Dashboard Structure COMPLETE
-2025-11-27 cline - Added Early Warning Signals (Phase 5):
-  - Enhanced src/app/admin/page.tsx with Early Warning Signals section:
-    - Detects friction keywords in recent check-ins (blocked, delay, waiting, stuck, slow, problem, issue, frustrated, bottleneck, backlog)
-    - Shows warnings when keywords appear 3+ times
-    - Tracks participation drops by department (>30% decrease triggers warning)
-    - Color-coded severity levels (high=red, medium=orange)
-    - Added last week's session data fetch for week-over-week comparison
-    - Added Workflows quick action link
-  - Fixed TypeScript FK relation errors (Supabase pattern):
-    - Department FK returns array, requires: `const deptRaw = m.department as any; Array.isArray(deptRaw) ? deptRaw[0]?.name : deptRaw?.name`
-    - Session FK same pattern for organization relation
-  - Version bumped to 1.5.0
-  - Phase 5 progress: Early Warning Signals COMPLETE
-2025-11-27 cline - Added AI Test Lab (Phase 3):
-  - Created src/app/admin/ai-test-lab/page.tsx:
-    - Admin-only page for testing all 5 AI agents
-    - Select agent from dropdown, enter sample text
-    - Shows sample prompts for each agent
-    - Displays raw JSON response and parsed summary
-  - Created src/app/api/admin/ai-test/route.ts:
-    - POST endpoint for testing agents
-    - Uses agent.processTurn() method with test context
-    - Admin role verification
-  - Updated src/app/admin/AdminSidebar.tsx with AI Test Lab nav item
-  - File count: 65 → 67 TypeScript/TSX files (2 new files)
-  - Phase 3 progress: AI Test Lab COMPLETE
-2025-11-27 cline - Added Error Handling (Phase 6):
-  - Created src/components/ui/ErrorBoundary.tsx:
-    - React class component error boundary
-    - Catches unhandled errors, shows friendly UI
-    - "Try Again" button to reset error state
-  - Created src/app/error.tsx:
-    - Next.js global error page
-    - Shows "Something went wrong" with reset button
-    - "Go Home" link for navigation fallback
-  - File count: 67 → 68 TypeScript/TSX files (2 new files)
-  - Phase 6 progress: Error Handling COMPLETE
-2025-11-27 cline - Created FOUNDER_GUIDE.md (Phase 8):
-  - Non-technical guide for founders to operate VizDots
-  - Covers: Getting Started, Admin Dashboard, Onboarding Wizard
-  - Explains: Inviting Employees, Understanding Dots, Viewing Workflows
-  - Documents: Early Warning Signals, AI Test Lab, Trial & Subscription
-  - Includes: Manual Test Script, Troubleshooting, Key Metrics to Watch
-  - Version bumped to 1.6.0
-  - Phase 8 progress: Documentation COMPLETE
-2025-11-27 cline - Completed Phases 3, 6, 7 Production-Ready Features:
-  - Phase 3: AI Logging
-    - Created supabase/migrations/011_ai_logs.sql (ai_logs table with RLS)
-    - Created src/lib/utils/ai-logger.ts (logAICall, startAITimer, withAILogging)
-  - Phase 6: Rate Limiting
-    - Created src/lib/utils/rate-limiter.ts (aiRateLimiter, authRateLimiter, apiRateLimiter)
-  - Phase 7: Marketing Page Enhancement
-    - Updated src/app/page.tsx with all 7 Appendix A sections
-    - Full responsive design with touch-friendly 44-48px buttons
-    - Sections: Hero, What VizDots Does, Why This Matters, Who For, How It Works, What You Get, Why VizDots Wins
-  - Version bumped to 1.7.0
-  - File count: 68 → 70 TypeScript/TSX, 10 → 11 SQL
-  - NOTE: User must run migration 011_ai_logs.sql on Supabase
+2025-11-27 cline - COMPLETED full documentation of all files
+2025-11-27 cline - COMPLETED Phase 1 Rebrand (Hi-Vis Biz → VizDots)
+2025-11-27 cline - Added My Dots page (Phase 2)
+2025-11-27 cline - Added Employee Welcome Screen (Phase 2)
+2025-11-27 cline - Refactored Admin Onboarding Wizard (5 → 4 steps)
+2025-11-27 cline - Enhanced Admin Dashboard with Early Warning Signals
+2025-11-27 cline - Added AI Test Lab (Phase 3)
+2025-11-27 cline - Added Error Handling (Phase 6)
+2025-11-27 cline - Created FOUNDER_GUIDE.md (Phase 8)
+2025-11-27 cline - Completed Phases 3, 6, 7 Production-Ready Features
+2025-11-28 cline - Completed FINAL_EXECUTION_PLAN.md Phases 1-9:
+  - Phase 1: Created BUGLOG.md, audited all routes
+  - Phase 2: Fixed disabled Start button, added Day 0 empty states
+  - Phase 3: Added forgot password flow, HashHandler routing
+  - Phase 4: Resume setup banner, contact us CTA, early warnings
+  - Phase 5: 012_scheduler_idempotence.sql migration
+  - Phase 6: Sandbox banner in AI Test Lab
+  - Phase 7: Design system in globals.css, accessibility improvements
+  - Phase 8: Vitest + Playwright test framework, MANUAL_TEST_SCRIPT.md
+  - Phase 9: not-found.tsx, 403 handling, no-membership handling
+  - Version bumped to 2.0.0
+  - File count: 71 TypeScript/TSX + 12 SQL + 5 Test files
