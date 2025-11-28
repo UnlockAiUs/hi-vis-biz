@@ -77,7 +77,7 @@ CREATE POLICY "Org admins can view email logs"
   TO authenticated
   USING (
     org_id IN (
-      SELECT organization_id FROM organization_members
+      SELECT org_id FROM organization_members
       WHERE user_id = auth.uid()
       AND role IN ('owner', 'admin')
     )
