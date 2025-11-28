@@ -21,6 +21,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getAgent, AgentContext, isValidAgentCode } from '@/lib/ai/agents'
 import { ProfileJson } from '@/types/database'
+import { withAILogging } from '@/lib/utils/ai-logger'
 
 // POST /api/sessions/[id]/messages - Send a message and get AI response
 export async function POST(
@@ -160,7 +161,11 @@ export async function POST(
   try {
     // If this is an opening message request, get the opening message
     if (isOpening && conversationHistory.length === 0) {
-      const openingMessage = await agent.getOpeningMessage(agentContext)
+      const openingMessage = await withAILogging(
+        session.agent_code,
+        () => agent.getOpeningMessage(agentContext),
+        { org_id: session.org_id, user_id: user.id, session_id: sessionId }
+      )
       
       // Save the opening message to answers as transcript
       const transcript = [{ role: 'assistant', content: openingMessage }]
@@ -185,7 +190,11 @@ export async function POST(
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
     
-    const result = await agent.processTurn(agentContext, message)
+    const result = await withAILogging(
+      session.agent_code,
+      () => agent.processTurn(agentContext, message),
+      { org_id: session.org_id, user_id: user.id, session_id: sessionId }
+    )
     
     // Update or create answer with transcript
     const newTranscript = [
@@ -240,6 +249,9 @@ export async function POST(
     })
   } catch (error) {
     console.error('Error processing message:', error)
-    return NextResponse.json({ error: 'Failed to process message' }, { status: 500 })
+    // Return user-friendly error without exposing internals
+    return NextResponse.json({ 
+      error: 'We hit a snag processing that answer. Please try again later.' 
+    }, { status: 500 })
   }
 }

@@ -119,6 +119,23 @@ export default function AITestLabPage() {
 
   return (
     <div className="max-w-4xl">
+      {/* Sandbox Warning Banner */}
+      <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0">
+            <svg className="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-medium text-amber-800">This is a sandbox</h3>
+            <p className="text-sm text-amber-700 mt-1">
+              Nothing you do here changes live employee check-ins. Use this to test and experiment with AI agents safely.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-2xl font-bold text-gray-900">AI Test Lab</h1>

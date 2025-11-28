@@ -37,7 +37,7 @@ export default async function AdminDashboardPage() {
   // Check if user has an organization
   const { data: membership } = await supabase
     .from('organization_members')
-    .select('org_id, role, organizations(name, subscription_status, trial_ends_at)')
+    .select('org_id, role, organizations(name, subscription_status, trial_ends_at, setup_completed_at)')
     .eq('user_id', user.id)
     .in('role', ['owner', 'admin'])
     .single()
@@ -51,6 +51,10 @@ export default async function AdminDashboardPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orgDataRaw = membership.organizations as any
   const orgName = (Array.isArray(orgDataRaw) ? orgDataRaw[0]?.name : orgDataRaw?.name) || 'Your Organization'
+  const setupCompletedAt = Array.isArray(orgDataRaw) ? orgDataRaw[0]?.setup_completed_at : orgDataRaw?.setup_completed_at
+
+  // Determine setup completion status (for resume banner)
+  const isSetupComplete = !!setupCompletedAt
 
   // Get today's date range
   const today = new Date()
@@ -329,6 +333,35 @@ export default async function AdminDashboardPage() {
           Admin Dashboard — See how work is really happening
         </p>
       </div>
+
+      {/* Resume Setup Banner */}
+      {!isSetupComplete && (
+        <div className="mb-8 bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-yellow-800">
+                  You&apos;re almost set up!
+                </h3>
+                <p className="mt-1 text-sm text-yellow-700">
+                  Finish your VizDots setup to start collecting insights from your team.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/admin/setup"
+              className="ml-4 flex-shrink-0 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Resume Setup
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Today Section */}
       <div className="mb-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">

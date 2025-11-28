@@ -249,9 +249,6 @@ VizDots Terminology:
 | `src/app/admin/setup/departments/page.tsx` | Step 2: Departments & Roles | Add/edit/delete departments |
 | `src/app/admin/setup/people/page.tsx` | Step 3: People | CSV upload or manual entry |
 | `src/app/admin/setup/settings/page.tsx` | Step 4: Settings & Launch | Check-in frequency, time window, review summary, launch |
-| `src/app/admin/setup/employees/page.tsx` | (Legacy - unused) | Old Step 3 |
-| `src/app/admin/setup/supervisors/page.tsx` | (Legacy - unused) | Old Step 4 |
-| `src/app/admin/setup/review/page.tsx` | (Legacy - unused) | Old Step 5 |
 
 ### Onboarding
 
@@ -454,15 +451,12 @@ After auth success:
 - [x] `src/app/admin/workflows/page.tsx`
 - [x] `src/app/admin/ai-test-lab/page.tsx`
 
-### ✅ Admin Setup Wizard (8 files - 5 active, 3 legacy)
+### ✅ Admin Setup Wizard (5 files)
 - [x] `src/app/admin/setup/layout.tsx`
-- [x] `src/app/admin/setup/page.tsx`
-- [x] `src/app/admin/setup/departments/page.tsx`
-- [x] `src/app/admin/setup/people/page.tsx` (NEW - Step 3)
-- [x] `src/app/admin/setup/settings/page.tsx` (NEW - Step 4)
-- [x] `src/app/admin/setup/employees/page.tsx` (legacy)
-- [x] `src/app/admin/setup/supervisors/page.tsx` (legacy)
-- [x] `src/app/admin/setup/review/page.tsx` (legacy)
+- [x] `src/app/admin/setup/page.tsx` (Step 1: Company Basics)
+- [x] `src/app/admin/setup/departments/page.tsx` (Step 2: Departments)
+- [x] `src/app/admin/setup/people/page.tsx` (Step 3: People)
+- [x] `src/app/admin/setup/settings/page.tsx` (Step 4: Settings & Launch)
 
 ### ✅ Onboarding (1 file)
 - [x] `src/app/onboarding/page.tsx`

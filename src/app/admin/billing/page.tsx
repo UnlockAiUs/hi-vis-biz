@@ -169,6 +169,20 @@ export default async function BillingPage() {
           We're integrating with Stripe to bring you seamless subscription management. 
           For now, enjoy your 30-day free trial with full access to all features!
         </p>
+        <div className="mt-6">
+          <a
+            href="mailto:support@vizdots.com?subject=VizDots%20Upgrade%20Request&body=Hi%20VizDots%20team,%0A%0AI'm%20interested%20in%20upgrading%20my%20account.%20Please%20let%20me%20know%20the%20next%20steps.%0A%0AOrganization:%20%0ANumber%20of%20users:%20%0A%0AThanks!"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Contact us to upgrade
+          </a>
+          <p className="mt-3 text-xs text-gray-500">
+            We'll help you set up your subscription manually while we finish the integration.
+          </p>
+        </div>
       </div>
 
       {/* Back to Dashboard */}

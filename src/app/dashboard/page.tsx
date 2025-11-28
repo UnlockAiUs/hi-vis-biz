@@ -20,6 +20,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { agentMetadata, AgentCode } from '@/lib/ai/agents'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -121,23 +122,28 @@ export default async function DashboardPage() {
                 You have {pendingSessions.length} check-in{pendingSessions.length > 1 ? 's' : ''} ready
               </h2>
               <div className="space-y-3">
-                {pendingSessions.map((session) => {
+                  {pendingSessions.map((session) => {
                   const agent = session.agents as Record<string, unknown>
+                  const agentCode = session.agent_code as AgentCode
+                  const metadata = agentCode ? agentMetadata[agentCode] : null
                   return (
                     <div
                       key={session.id}
                       className="bg-white rounded-lg p-4 border border-yellow-100 flex items-center justify-between"
                     >
-                      <div>
-                        <h3 className="font-medium text-gray-900">{agent?.name as string || 'Check-in'}</h3>
-                        <p className="text-sm text-gray-500">{agent?.description as string || 'Quick conversation'}</p>
+                      <div className="flex items-center gap-3">
+                        {metadata && <span className="text-2xl">{metadata.icon}</span>}
+                        <div>
+                          <h3 className="font-medium text-gray-900">{metadata?.name || agent?.name as string || 'Check-in'}</h3>
+                          <p className="text-sm text-gray-500">{metadata?.description || agent?.description as string || '2-3 minutes'}</p>
+                        </div>
                       </div>
-                      <button
+                      <Link
+                        href={`/dashboard/session/${session.id}`}
                         className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 text-sm font-medium"
-                        disabled
                       >
-                        Start (Coming Soon)
-                      </button>
+                        Start Check-in
+                      </Link>
                     </div>
                   )
                 })}

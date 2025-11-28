@@ -35,8 +35,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        {/* Skip to main content link for accessibility */}
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
         <HashHandler />
-        {children}
+        <div id="main-content">
+          {children}
+        </div>
       </body>
     </html>
   )

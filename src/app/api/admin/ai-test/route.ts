@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAgent } from '@/lib/ai/agents'
 import type { AgentCode } from '@/lib/ai/agents/base'
+import { withAILogging } from '@/lib/utils/ai-logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -76,7 +77,12 @@ export async function POST(request: NextRequest) {
     }
 
     const startTime = Date.now()
-    const result = await agent.processTurn(testContext, input_text)
+    // Use AI logging for test lab calls (helps with debugging)
+    const result = await withAILogging(
+      `test_lab_${agent_code}`,
+      () => agent.processTurn(testContext, input_text),
+      { user_id: user.id }
+    )
     const duration = Date.now() - startTime
 
     return NextResponse.json({

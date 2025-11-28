@@ -14,7 +14,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -25,6 +25,29 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ orgName }: AdminSidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+
+  // Close sidebar on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isOpen])
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
 
   const navItems = [
     {
@@ -112,69 +135,81 @@ export default function AdminSidebar({ orgName }: AdminSidebarProps) {
   return (
     <>
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-blue-600 shadow-lg">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-blue-600 shadow-lg" role="banner">
         <div className="flex items-center justify-between h-14 px-4">
-          <span className="text-lg font-bold text-white">VizDots</span>
+          <Link href="/admin" className="text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 rounded">
+            VizDots
+          </Link>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="p-2 text-white rounded-md hover:bg-blue-700 focus:outline-none"
+            className="p-2 min-w-[44px] min-h-[44px] text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600"
+            aria-expanded={isOpen}
+            aria-controls="admin-sidebar"
+            aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
           >
             {isOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             )}
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Mobile spacer */}
-      <div className="lg:hidden h-14" />
+      <div className="lg:hidden h-14" aria-hidden="true" />
 
       {/* Overlay */}
       {isOpen && (
         <div
           className="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50"
           onClick={() => setIsOpen(false)}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
-      <div
+      <aside
+        id="admin-sidebar"
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        role="navigation"
+        aria-label="Admin navigation"
       >
         <div className="flex flex-col h-full">
           {/* Logo/Brand */}
           <div className="flex items-center justify-center h-16 px-4 bg-blue-600">
-            <span className="text-xl font-bold text-white">VizDots</span>
+            <Link href="/admin" className="text-xl font-bold text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 rounded px-2 py-1">
+              VizDots
+            </Link>
           </div>
 
           {/* Org Name */}
           <div className="px-4 py-3 border-b border-gray-200">
-            <p className="text-xs text-gray-500 uppercase tracking-wider">Organization</p>
-            <p className="text-sm font-medium text-gray-900 truncate">{orgName}</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wider" id="org-label">Organization</p>
+            <p className="text-sm font-medium text-gray-900 truncate" aria-labelledby="org-label">{orgName}</p>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto" aria-label="Admin menu">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`flex items-center px-4 py-2 min-h-[44px] text-sm font-medium rounded-md transition-colors ${
                   isActive(item.href)
                     ? 'bg-blue-50 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 }`}
+                aria-current={isActive(item.href) ? 'page' : undefined}
               >
-                <span className={`mr-3 ${isActive(item.href) ? 'text-blue-500' : 'text-gray-400'}`}>
+                <span className={`mr-3 ${isActive(item.href) ? 'text-blue-500' : 'text-gray-400'}`} aria-hidden="true">
                   {item.icon}
                 </span>
                 {item.label}
@@ -187,16 +222,16 @@ export default function AdminSidebar({ orgName }: AdminSidebarProps) {
             <Link
               href="/dashboard"
               onClick={() => setIsOpen(false)}
-              className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 hover:text-gray-900"
+              className="flex items-center px-4 py-2 min-h-[44px] text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 hover:text-gray-900"
             >
-              <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
               </svg>
               Back to Dashboard
             </Link>
           </div>
         </div>
-      </div>
+      </aside>
     </>
   )
 }
