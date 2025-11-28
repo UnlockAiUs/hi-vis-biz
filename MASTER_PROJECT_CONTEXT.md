@@ -8,14 +8,16 @@
 
 ## META
 ```yaml
-version: 1.5.0
+version: 1.6.0
 last_updated: 2025-11-27
 last_agent: cline
 purpose: SINGLE SOURCE OF TRUTH for all AI agents working on this project
 format: optimized for AI token efficiency
-documentation_status: COMPLETE - all 65 code files documented
+documentation_status: COMPLETE - all 68 code files documented
 rebrand_status: COMPLETE - rebranded from Hi-Vis Biz to VizDots
 early_warning_signals: COMPLETE - Phase 5 analytics feature added
+ai_test_lab: COMPLETE - Phase 3 admin AI testing page added
+error_handling: COMPLETE - Phase 6 error boundary and global error page added
 ```
 
 ## CRITICAL RULES FOR AI AGENTS
@@ -196,6 +198,7 @@ VizDots Terminology:
 | `src/components/ui/Toast.tsx` | Toast notifications | ToastProvider, useToast |
 | `src/components/ui/Skeleton.tsx` | Loading placeholders | Skeleton, SkeletonCard, SkeletonTable, etc. |
 | `src/components/ui/ActionMenu.tsx` | Dropdown action menu | default ActionMenu, ActionMenuIcons |
+| `src/components/ui/ErrorBoundary.tsx` | React error boundary wrapper | ErrorBoundary |
 
 ### Auth Pages
 
@@ -591,3 +594,35 @@ find supabase/migrations -name "*.sql" | wc -l
     - Session FK same pattern for organization relation
   - Version bumped to 1.5.0
   - Phase 5 progress: Early Warning Signals COMPLETE
+2025-11-27 cline - Added AI Test Lab (Phase 3):
+  - Created src/app/admin/ai-test-lab/page.tsx:
+    - Admin-only page for testing all 5 AI agents
+    - Select agent from dropdown, enter sample text
+    - Shows sample prompts for each agent
+    - Displays raw JSON response and parsed summary
+  - Created src/app/api/admin/ai-test/route.ts:
+    - POST endpoint for testing agents
+    - Uses agent.processTurn() method with test context
+    - Admin role verification
+  - Updated src/app/admin/AdminSidebar.tsx with AI Test Lab nav item
+  - File count: 65 → 67 TypeScript/TSX files (2 new files)
+  - Phase 3 progress: AI Test Lab COMPLETE
+2025-11-27 cline - Added Error Handling (Phase 6):
+  - Created src/components/ui/ErrorBoundary.tsx:
+    - React class component error boundary
+    - Catches unhandled errors, shows friendly UI
+    - "Try Again" button to reset error state
+  - Created src/app/error.tsx:
+    - Next.js global error page
+    - Shows "Something went wrong" with reset button
+    - "Go Home" link for navigation fallback
+  - File count: 67 → 68 TypeScript/TSX files (2 new files)
+  - Phase 6 progress: Error Handling COMPLETE
+2025-11-27 cline - Created FOUNDER_GUIDE.md (Phase 8):
+  - Non-technical guide for founders to operate VizDots
+  - Covers: Getting Started, Admin Dashboard, Onboarding Wizard
+  - Explains: Inviting Employees, Understanding Dots, Viewing Workflows
+  - Documents: Early Warning Signals, AI Test Lab, Trial & Subscription
+  - Includes: Manual Test Script, Troubleshooting, Key Metrics to Watch
+  - Version bumped to 1.6.0
+  - Phase 8 progress: Documentation COMPLETE
