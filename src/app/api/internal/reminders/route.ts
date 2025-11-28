@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
         user_id,
         invited_email,
         first_name,
-        organization_id,
+        org_id,
         organizations!inner(name)
       `)
       .in('user_id', userIds)
@@ -147,13 +147,13 @@ export async function POST(request: NextRequest) {
         user_id: member.user_id,
         invited_email: member.invited_email,
         first_name: member.first_name,
-        org_id: member.organization_id,
+        org_id: member.org_id,
         org_name: (member.organizations as any)?.name || 'your organization',
       });
     }
     
     // 8. Process each user
-    for (const [userId, sessions] of sessionsByUser) {
+    for (const [userId, sessions] of Array.from(sessionsByUser.entries())) {
       const member = memberLookup.get(userId);
       
       if (!member) {

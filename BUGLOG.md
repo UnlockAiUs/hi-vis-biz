@@ -219,3 +219,5 @@ Created as part of Phase 1 of FINAL_EXECUTION_PLAN.md.
 | 2025-11-27 | UX-003 | Verified | My Dots already has proper empty state |
 | 2025-11-27 | BUG-006 | Resolved | Removed legacy setup page references from documentation |
 | 2025-11-28 | BUG-010 | Resolved | Fixed RLS policy column name in 013_email_logs.sql (organization_id → org_id) |
+| 2025-11-28 | BUG-011 | Resolved | Fixed Map iteration error in reminders/route.ts causing Vercel build failure |
+| 2025-11-28 | BUG-012 | Resolved | Fixed org_id column name in reminders route query (was organization_id) |
