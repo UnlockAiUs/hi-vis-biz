@@ -27,23 +27,23 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">VD</span>
             </div>
             <h1 className="text-xl font-bold text-gray-900">VizDots</h1>
           </div>
-          <div className="space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <Link
               href="/auth/login"
-              className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+              className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm sm:text-base"
             >
               Sign in
             </Link>
             <Link
               href="/auth/register"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
+              className="bg-blue-600 text-white px-3 py-2 sm:px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md text-sm sm:text-base min-h-[44px] flex items-center"
             >
               Get Started
             </Link>
@@ -53,64 +53,158 @@ export default function HomePage() {
 
       <main>
         {/* Hero Section */}
-        <section className="max-w-7xl mx-auto px-4 py-20 sm:px-6 lg:px-8">
+        <section className="max-w-7xl mx-auto px-4 py-12 sm:py-20 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="inline-flex items-center bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full text-sm font-medium mb-6">
               <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
               Simple. Human. Insightful.
             </div>
-            <h2 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl leading-tight">
+            <h2 className="text-3xl font-bold text-gray-900 sm:text-5xl md:text-6xl leading-tight">
               See Your Business Clearly
               <span className="text-blue-600 block mt-2">One Dot at a Time</span>
             </h2>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-600 leading-relaxed">
+            <p className="mt-6 max-w-2xl mx-auto text-lg sm:text-xl text-gray-600 leading-relaxed px-4">
               VizDots turns small daily check-ins into a living map of how your business actually runs.
               Uncover hidden steps. Spot friction points. Strengthen your team.
+              <span className="block mt-2 font-medium">Get clarity without complexity.</span>
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center gap-4 px-4">
               <Link
                 href="/auth/register"
-                className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="bg-blue-600 text-white px-6 sm:px-8 py-4 rounded-lg text-base sm:text-lg font-medium hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 min-h-[48px] flex items-center justify-center"
               >
                 Start Free → 30 Days On Us
               </Link>
               <Link
                 href="#how-it-works"
-                className="border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-lg text-lg font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"
+                className="border-2 border-gray-200 text-gray-700 px-6 sm:px-8 py-4 rounded-lg text-base sm:text-lg font-medium hover:bg-gray-50 hover:border-gray-300 transition-all min-h-[48px] flex items-center justify-center"
               >
                 See How It Works
               </Link>
             </div>
-            <p className="mt-4 text-sm text-gray-500">No credit card required • No setup • No dashboards to build</p>
+            <p className="mt-4 text-sm text-gray-500 px-4">No credit card required • No setup • No dashboards to build</p>
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="bg-white py-12 border-y border-gray-100">
+        {/* What VizDots Does Section */}
+        <section className="bg-white py-16 sm:py-20 border-y border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div>
-                <div className="text-3xl font-bold text-blue-600">2 min</div>
-                <div className="text-gray-600 mt-1">Average check-in time</div>
+            <div className="text-center mb-12">
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Small Inputs. Big Visibility. Real Improvement.
+              </h3>
+              <p className="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+                Your people know the truth about how work gets done.
+                VizDots makes it easy for them to share it — naturally, in tiny moments.
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8 mt-12">
+              <div className="text-center p-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">📍</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900">Each check-in is a dot</h4>
+                <p className="mt-2 text-gray-600">A small clue about workflows, roadblocks, responsibilities, and experience.</p>
               </div>
-              <div>
-                <div className="text-3xl font-bold text-blue-600">85%</div>
-                <div className="text-gray-600 mt-1">Response rate</div>
+              <div className="text-center p-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">🔗</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900">VizDots connects the dots</h4>
+                <p className="mt-2 text-gray-600">Into a clear, living picture of your operations.</p>
               </div>
-              <div>
-                <div className="text-3xl font-bold text-blue-600">3x/week</div>
-                <div className="text-gray-600 mt-1">Light-touch frequency</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-blue-600">5</div>
-                <div className="text-gray-600 mt-1">Specialized AI agents</div>
+              <div className="text-center p-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">✨</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900">Clarity delivered automatically</h4>
+                <p className="mt-2 text-gray-600">No setup. No dashboards to build. No training required.</p>
               </div>
             </div>
           </div>
         </section>
 
+        {/* Why This Matters Section */}
+        <section className="py-16 sm:py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto text-center">
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
+                Why This Matters
+              </h3>
+              <p className="text-lg text-gray-600 mb-8">
+                Because most small businesses run on undocumented knowledge.
+              </p>
+              <div className="grid sm:grid-cols-2 gap-6 text-left">
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="text-2xl mb-3">🧠</div>
+                  <p className="text-gray-700">Processes live in people&apos;s heads.</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="text-2xl mb-3">🔄</div>
+                  <p className="text-gray-700">Roles evolve without being captured.</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="text-2xl mb-3">👁️</div>
+                  <p className="text-gray-700">Owners see the outcomes — not the steps it took to get there.</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="text-2xl mb-3">🚧</div>
+                  <p className="text-gray-700">Employees work around problems that never get surfaced.</p>
+                </div>
+              </div>
+              <p className="mt-8 text-lg font-medium text-blue-600">
+                VizDots reveals the real story, one dot at a time.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Who VizDots Is For Section */}
+        <section className="py-16 sm:py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Who VizDots Is For
+              </h3>
+              <p className="mt-4 text-lg text-gray-600">
+                Built for the businesses where clarity matters most
+              </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
+              <div className="bg-blue-50 p-4 sm:p-6 rounded-xl text-center">
+                <span className="text-2xl sm:text-3xl">🔧</span>
+                <p className="mt-2 font-medium text-gray-900 text-sm sm:text-base">Service & Field Ops</p>
+              </div>
+              <div className="bg-blue-50 p-4 sm:p-6 rounded-xl text-center">
+                <span className="text-2xl sm:text-3xl">🚚</span>
+                <p className="mt-2 font-medium text-gray-900 text-sm sm:text-base">Logistics & Dispatch</p>
+              </div>
+              <div className="bg-blue-50 p-4 sm:p-6 rounded-xl text-center">
+                <span className="text-2xl sm:text-3xl">🏗️</span>
+                <p className="mt-2 font-medium text-gray-900 text-sm sm:text-base">Trades & Labor</p>
+              </div>
+              <div className="bg-blue-50 p-4 sm:p-6 rounded-xl text-center">
+                <span className="text-2xl sm:text-3xl">🏪</span>
+                <p className="mt-2 font-medium text-gray-900 text-sm sm:text-base">Retail & Distributed Teams</p>
+              </div>
+              <div className="bg-blue-50 p-4 sm:p-6 rounded-xl text-center">
+                <span className="text-2xl sm:text-3xl">🏨</span>
+                <p className="mt-2 font-medium text-gray-900 text-sm sm:text-base">Hospitality & Support</p>
+              </div>
+              <div className="bg-blue-50 p-4 sm:p-6 rounded-xl text-center">
+                <span className="text-2xl sm:text-3xl">📈</span>
+                <p className="mt-2 font-medium text-gray-900 text-sm sm:text-base">Growing SMBs</p>
+              </div>
+            </div>
+            <p className="mt-8 text-center text-gray-600 text-lg">
+              If your business depends on people doing real work every day…<br />
+              <span className="font-medium text-gray-900">VizDots helps you see it.</span>
+            </p>
+          </div>
+        </section>
+
         {/* Features Section */}
-        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-16 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-gray-900 sm:text-4xl">
               Five Perspectives, One Complete Picture
@@ -214,120 +308,164 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* How It Works Section */}
-        <section id="how-it-works" className="bg-gray-50 py-20">
+        {/* How It Works Section - 5 Steps */}
+        <section id="how-it-works" className="bg-gray-50 py-16 sm:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h3 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-                How It Works
+            <div className="text-center mb-12 sm:mb-16">
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 sm:text-4xl">
+                How VizDots Works
               </h3>
-              <p className="mt-4 text-xl text-gray-600 max-w-2xl mx-auto">
+              <p className="mt-4 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
                 Get started in minutes, see results in days
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-8">
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mx-auto">
                   1
                 </div>
-                <h4 className="mt-6 text-xl font-semibold text-gray-900">Set Up Your Org</h4>
-                <p className="mt-3 text-gray-600">
-                  Create your organization, add departments, and invite team members via email.
+                <h4 className="mt-4 sm:mt-6 text-lg sm:text-xl font-semibold text-gray-900">Create Your Organization</h4>
+                <p className="mt-2 sm:mt-3 text-gray-600 text-sm sm:text-base">
+                  Enter your company name and invite your team with a simple CSV upload.
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mx-auto">
                   2
                 </div>
-                <h4 className="mt-6 text-xl font-semibold text-gray-900">Daily Check-ins</h4>
-                <p className="mt-3 text-gray-600">
-                  Employees spend 1-2 minutes chatting with AI agents 2-3 times per week.
+                <h4 className="mt-4 sm:mt-6 text-lg sm:text-xl font-semibold text-gray-900">Quick Daily Check-Ins</h4>
+                <p className="mt-2 sm:mt-3 text-gray-600 text-sm sm:text-base">
+                  Short. Lightweight. Personalized to each role.
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mx-auto">
                   3
                 </div>
-                <h4 className="mt-6 text-xl font-semibold text-gray-900">Get Insights</h4>
-                <p className="mt-3 text-gray-600">
-                  View department analytics, morale trends, and actionable insights in your dashboard.
+                <h4 className="mt-4 sm:mt-6 text-lg sm:text-xl font-semibold text-gray-900">Each Response = A Dot</h4>
+                <p className="mt-2 sm:mt-3 text-gray-600 text-sm sm:text-base">
+                  Every dot reflects a small truth about how work happens.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mx-auto">
+                  4
+                </div>
+                <h4 className="mt-4 sm:mt-6 text-lg sm:text-xl font-semibold text-gray-900">VizDots Connects</h4>
+                <p className="mt-2 sm:mt-3 text-gray-600 text-sm sm:text-base">
+                  Workflows revealed. Friction surfaced. Documentation auto-generated.
+                </p>
+              </div>
+              <div className="text-center sm:col-span-2 lg:col-span-1">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mx-auto">
+                  5
+                </div>
+                <h4 className="mt-4 sm:mt-6 text-lg sm:text-xl font-semibold text-gray-900">Continuous Clarity</h4>
+                <p className="mt-2 sm:mt-3 text-gray-600 text-sm sm:text-base">
+                  No configuration. No complexity. Just a clear, evolving view of your business.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Use Cases Section */}
-        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h3 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Built for Growing Teams
-            </h3>
-            <p className="mt-4 text-xl text-gray-600 max-w-2xl mx-auto">
-              Whether you&apos;re 10 people or 1,000, VizDots helps you stay connected
-            </p>
+        {/* What You Get Section */}
+        <section className="py-16 sm:py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                What You Get From VizDots
+              </h3>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100">
+                <div className="text-3xl mb-4">🔍</div>
+                <h4 className="text-lg font-semibold text-gray-900">Operational Clarity</h4>
+                <p className="mt-2 text-gray-600">See how work actually gets done — not how you assume it works.</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100">
+                <div className="text-3xl mb-4">🗺️</div>
+                <h4 className="text-lg font-semibold text-gray-900">Live Workflow Maps</h4>
+                <p className="mt-2 text-gray-600">Dots build patterns; patterns become insight.</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100">
+                <div className="text-3xl mb-4">📝</div>
+                <h4 className="text-lg font-semibold text-gray-900">Documentation Without Pain</h4>
+                <p className="mt-2 text-gray-600">Process documentation created from real check-ins.</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100">
+                <div className="text-3xl mb-4">⚠️</div>
+                <h4 className="text-lg font-semibold text-gray-900">Early Warning Signals</h4>
+                <p className="mt-2 text-gray-600">Catch bottlenecks before they turn into problems.</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100">
+                <div className="text-3xl mb-4">👥</div>
+                <h4 className="text-lg font-semibold text-gray-900">Performance & Role Visibility</h4>
+                <p className="mt-2 text-gray-600">See responsibilities, steps, and blockers per role.</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100">
+                <div className="text-3xl mb-4">🎯</div>
+                <h4 className="text-lg font-semibold text-gray-900">Small Wins, Big Results</h4>
+                <p className="mt-2 text-gray-600">Tiny daily signals that compound into a smarter business.</p>
+              </div>
+            </div>
           </div>
+        </section>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white p-8 rounded-2xl border border-gray-200">
-              <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-                <span className="text-2xl mr-3">🏢</span>
-                HR Leaders
-              </h4>
-              <p className="mt-3 text-gray-600">
-                Replace annual surveys with continuous feedback. Spot retention risks early and understand what employees really need.
-              </p>
+        {/* Why VizDots Wins Section */}
+        <section className="py-16 sm:py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Why VizDots Wins
+              </h3>
             </div>
-            <div className="bg-white p-8 rounded-2xl border border-gray-200">
-              <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-                <span className="text-2xl mr-3">👥</span>
-                Team Managers
-              </h4>
-              <p className="mt-3 text-gray-600">
-                Know how your team is really doing without awkward 1:1s. Understand workloads and blockers in real-time.
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-gray-200">
-              <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-                <span className="text-2xl mr-3">⚡</span>
-                Operations
-              </h4>
-              <p className="mt-3 text-gray-600">
-                Map actual workflows and identify process bottlenecks. Discover which tools work and which ones don't.
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-gray-200">
-              <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-                <span className="text-2xl mr-3">📈</span>
-                Executives
-              </h4>
-              <p className="mt-3 text-gray-600">
-                Get a pulse on organizational health without filtering through layers. Make data-driven people decisions.
-              </p>
+            <div className="grid md:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
+              <div className="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">🏪</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900">Made for Small Businesses</h4>
+                <p className="mt-3 text-gray-600">Simple setup. Natural adoption. Value from day one.</p>
+              </div>
+              <div className="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">🎓</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900">Zero Training Required</h4>
+                <p className="mt-3 text-gray-600">Your team interacts with VizDots like a person, not a platform.</p>
+              </div>
+              <div className="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">⚡</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900">No Setup. No Overhead.</h4>
+                <p className="mt-3 text-gray-600">Enter your people, and VizDots does the rest.</p>
+              </div>
             </div>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="bg-gradient-to-r from-blue-600 to-blue-700 py-20">
+        <section className="bg-gradient-to-r from-blue-600 to-blue-700 py-16 sm:py-20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h3 className="text-3xl font-bold text-white sm:text-4xl">
-              Ready to See Your Team Clearly?
+            <h3 className="text-2xl sm:text-3xl font-bold text-white sm:text-4xl">
+              Ready to See Your Business Clearly?
             </h3>
-            <p className="mt-4 text-xl text-blue-100">
+            <p className="mt-4 text-lg sm:text-xl text-blue-100">
               Start your free trial today. No credit card required.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+            <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4 px-4">
               <Link
                 href="/auth/register"
-                className="bg-white text-blue-700 px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-50 transition-colors shadow-lg"
+                className="bg-white text-blue-700 px-6 sm:px-8 py-4 rounded-lg text-base sm:text-lg font-medium hover:bg-blue-50 transition-colors shadow-lg min-h-[48px] flex items-center justify-center"
               >
-                Start Free Trial
+                Start Free → 30 Days On Us
               </Link>
               <Link
                 href="/auth/login"
-                className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-white/10 transition-colors"
+                className="border-2 border-white text-white px-6 sm:px-8 py-4 rounded-lg text-base sm:text-lg font-medium hover:bg-white/10 transition-colors min-h-[48px] flex items-center justify-center"
               >
                 Sign In
               </Link>

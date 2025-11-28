@@ -8,16 +8,19 @@
 
 ## META
 ```yaml
-version: 1.6.0
+version: 1.7.0
 last_updated: 2025-11-27
 last_agent: cline
 purpose: SINGLE SOURCE OF TRUTH for all AI agents working on this project
 format: optimized for AI token efficiency
-documentation_status: COMPLETE - all 68 code files documented
+documentation_status: COMPLETE - all 70 code files documented
 rebrand_status: COMPLETE - rebranded from Hi-Vis Biz to VizDots
 early_warning_signals: COMPLETE - Phase 5 analytics feature added
 ai_test_lab: COMPLETE - Phase 3 admin AI testing page added
 error_handling: COMPLETE - Phase 6 error boundary and global error page added
+ai_logging: COMPLETE - Phase 3 AI call logging system added
+rate_limiting: COMPLETE - Phase 6 rate limiting utility added
+marketing_page: COMPLETE - Phase 7 full landing page with all sections
 ```
 
 ## CRITICAL RULES FOR AI AGENTS
@@ -188,6 +191,8 @@ VizDots Terminology:
 | `src/lib/utils/scheduler.ts` | Session scheduling | SCHEDULING_CONFIG, determineSessionsToSchedule |
 | `src/lib/utils/onboarding-wizard.ts` | Wizard state management | OnboardingState, useWizardState, WIZARD_STEPS (4 steps), INDUSTRIES, ScheduleSettings |
 | `src/lib/utils/csv-parser.ts` | Employee CSV import | parseCSV, generateCSVTemplate, downloadCSVTemplate |
+| `src/lib/utils/ai-logger.ts` | AI call logging | logAICall, startAITimer, withAILogging |
+| `src/lib/utils/rate-limiter.ts` | API rate limiting | aiRateLimiter, authRateLimiter, checkRateLimit, getClientIP |
 
 ### UI Components
 
@@ -313,6 +318,7 @@ VizDots Terminology:
 | `008_schedule_settings.sql` | Schedule settings table |
 | `009_enhanced_onboarding.sql` | Onboarding improvements |
 | `010_subscription_trial.sql` | Trial/subscription fields |
+| `011_ai_logs.sql` | AI call logging table for debugging |
 
 ---
 
@@ -384,7 +390,7 @@ After auth success:
 
 ---
 
-## COMPLETE FILE CHECKLIST (64 TypeScript/TSX + 10 SQL)
+## COMPLETE FILE CHECKLIST (70 TypeScript/TSX + 11 SQL)
 
 ### ✅ Core Infrastructure (4 files)
 - [x] `src/middleware.ts`
@@ -405,18 +411,21 @@ After auth success:
 - [x] `src/lib/ai/agents/pain-scanner.ts`
 - [x] `src/lib/ai/agents/focus-tracker.ts`
 
-### ✅ Utilities (4 files)
+### ✅ Utilities (6 files)
 - [x] `src/lib/utils/profile.ts`
 - [x] `src/lib/utils/scheduler.ts`
 - [x] `src/lib/utils/onboarding-wizard.ts`
 - [x] `src/lib/utils/csv-parser.ts`
+- [x] `src/lib/utils/ai-logger.ts`
+- [x] `src/lib/utils/rate-limiter.ts`
 
-### ✅ UI Components (5 files)
+### ✅ UI Components (6 files)
 - [x] `src/components/auth/HashHandler.tsx`
 - [x] `src/components/ui/LoadingSpinner.tsx`
 - [x] `src/components/ui/Toast.tsx`
 - [x] `src/components/ui/Skeleton.tsx`
 - [x] `src/components/ui/ActionMenu.tsx`
+- [x] `src/components/ui/ErrorBoundary.tsx`
 
 ### ✅ Auth Pages (6 files)
 - [x] `src/app/auth/login/page.tsx`
@@ -443,6 +452,7 @@ After auth success:
 - [x] `src/app/admin/org-chart/page.tsx`
 - [x] `src/app/admin/settings/page.tsx`
 - [x] `src/app/admin/workflows/page.tsx`
+- [x] `src/app/admin/ai-test-lab/page.tsx`
 
 ### ✅ Admin Setup Wizard (8 files - 5 active, 3 legacy)
 - [x] `src/app/admin/setup/layout.tsx`
@@ -457,10 +467,11 @@ After auth success:
 ### ✅ Onboarding (1 file)
 - [x] `src/app/onboarding/page.tsx`
 
-### ✅ Root App (3 files)
+### ✅ Root App (4 files)
 - [x] `src/app/layout.tsx`
 - [x] `src/app/page.tsx`
 - [x] `src/app/globals.css`
+- [x] `src/app/error.tsx`
 
 ### ✅ API Routes (11 files)
 - [x] `src/app/api/sessions/route.ts`
@@ -475,8 +486,9 @@ After auth success:
 - [x] `src/app/api/analytics/departments/route.ts`
 - [x] `src/app/api/auth/link-invite/route.ts`
 - [x] `src/app/api/internal/scheduler/route.ts`
+- [x] `src/app/api/admin/ai-test/route.ts`
 
-### ✅ SQL Migrations (10 files)
+### ✅ SQL Migrations (11 files)
 - [x] `supabase/migrations/001_initial_schema.sql`
 - [x] `supabase/migrations/002_agents_sessions.sql`
 - [x] `supabase/migrations/003_user_profiles.sql`
@@ -487,6 +499,7 @@ After auth success:
 - [x] `supabase/migrations/008_schedule_settings.sql`
 - [x] `supabase/migrations/009_enhanced_onboarding.sql`
 - [x] `supabase/migrations/010_subscription_trial.sql`
+- [x] `supabase/migrations/011_ai_logs.sql`
 
 ---
 
@@ -494,9 +507,9 @@ After auth success:
 Run this to verify all files exist:
 ```bash
 find src -name "*.ts" -o -name "*.tsx" | wc -l
-# Should output: 64
+# Should output: 70
 find supabase/migrations -name "*.sql" | wc -l
-# Should output: 10
+# Should output: 11
 ```
 
 ---
@@ -626,3 +639,16 @@ find supabase/migrations -name "*.sql" | wc -l
   - Includes: Manual Test Script, Troubleshooting, Key Metrics to Watch
   - Version bumped to 1.6.0
   - Phase 8 progress: Documentation COMPLETE
+2025-11-27 cline - Completed Phases 3, 6, 7 Production-Ready Features:
+  - Phase 3: AI Logging
+    - Created supabase/migrations/011_ai_logs.sql (ai_logs table with RLS)
+    - Created src/lib/utils/ai-logger.ts (logAICall, startAITimer, withAILogging)
+  - Phase 6: Rate Limiting
+    - Created src/lib/utils/rate-limiter.ts (aiRateLimiter, authRateLimiter, apiRateLimiter)
+  - Phase 7: Marketing Page Enhancement
+    - Updated src/app/page.tsx with all 7 Appendix A sections
+    - Full responsive design with touch-friendly 44-48px buttons
+    - Sections: Hero, What VizDots Does, Why This Matters, Who For, How It Works, What You Get, Why VizDots Wins
+  - Version bumped to 1.7.0
+  - File count: 68 → 70 TypeScript/TSX, 10 → 11 SQL
+  - NOTE: User must run migration 011_ai_logs.sql on Supabase
