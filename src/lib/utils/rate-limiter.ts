@@ -92,7 +92,10 @@ class RateLimiter {
    */
   private cleanup(): void {
     const now = Date.now()
-    for (const [key, entry] of this.store.entries()) {
+    // Use Array.from to avoid downlevelIteration requirement
+    const entries = Array.from(this.store.entries())
+    for (let i = 0; i < entries.length; i++) {
+      const [key, entry] = entries[i]
       if (now > entry.resetAt) {
         this.store.delete(key)
       }
