@@ -1529,7 +1529,89 @@ Close the engagement loop:
 
 ### Agent Handover Notes (Phase 10)
 
-(Agents fill this in after executing Phase 10.)
+**Completed: November 28, 2025**
+
+**What was implemented:**
+
+1. **AWS SES Email Client (`src/lib/email/client.ts`):**
+   - AWS SES v2 API integration using `@aws-sdk/client-sesv2`
+   - `sendEmail()` - Core email sending function
+   - `sendEmailWithRetry()` - Retry with exponential backoff (1s, 2s, 4s)
+   - `isEmailConfigured()` - Check if SES credentials are set
+   - `getEmailConfig()` - Get current email configuration
+   - Dev mode fallback: logs to console if SES credentials not configured
+   - Always includes `ConfigurationSetName` and `EmailTags` per AWS_SES_EMAIL_DOC.md
+
+2. **Email Template (`src/lib/email/templates/checkin-reminder.ts`):**
+   - `generateCheckinReminderEmail()` function
+   - Responsive HTML email with VizDots branding (yellow header)
+   - Plain text fallback
+   - Personalization: first name, session count, org name
+   - "What's a dot?" explanation section
+   - Blue CTA button linking to dashboard
+
+3. **Email Logs Migration (`supabase/migrations/013_email_logs.sql`):**
+   - `email_logs` table for tracking and idempotence
+   - Fields: `org_id`, `user_id`, `recipient_email`, `email_type`, `session_id`
+   - Status tracking: `status`, `message_id`, `error_code`
+   - `idempotency_key` (UNIQUE) - prevents duplicate sends
+   - RLS: service role full access, admins read-only for their org
+   - Indexes for fast lookups by user, org, session, status
+
+4. **Reminders API (`src/app/api/internal/reminders/route.ts`):**
+   - POST endpoint protected by `SCHEDULER_REMINDERS_SECRET`
+   - Finds pending sessions for today (not started, not completed)
+   - Groups by user, fetches member info with org name
+   - Idempotency check: one reminder per user per day
+   - Sends personalized email with session count
+   - Logs all sends to `email_logs` table
+   - Returns summary: `{ sent, skipped, failed }`
+
+5. **Vercel Cron Configuration (`vercel.json`):**
+   - Added reminders cron job at 8 AM daily (UTC)
+   - Path: `/api/internal/reminders?secret=$SCHEDULER_REMINDERS_SECRET`
+
+6. **Environment Variables (`.env.example`):**
+   - `AWS_SES_ACCESS_KEY_ID` - SES IAM user access key
+   - `AWS_SES_SECRET_ACCESS_KEY` - SES IAM user secret key
+   - `AWS_SES_REGION` - Default: us-east-1
+   - `EMAIL_FROM` - Default: "VizDots <no-reply@vizdots.com>"
+   - `EMAIL_CONFIG_SET` - Default: vizdots-events
+   - `SCHEDULER_REMINDERS_SECRET` - Secret for reminders cron
+   - `NEXT_PUBLIC_APP_URL` - For email links
+
+**Human Tasks Required (🔑):**
+
+1. **Run Migration:** Apply `013_email_logs.sql` in Supabase dashboard
+2. **Set Environment Variables in Vercel:**
+   - `AWS_SES_ACCESS_KEY_ID`
+   - `AWS_SES_SECRET_ACCESS_KEY`
+   - `AWS_SES_REGION`
+   - `EMAIL_FROM`
+   - `EMAIL_CONFIG_SET`
+   - `SCHEDULER_REMINDERS_SECRET` (generate a random string)
+   - `NEXT_PUBLIC_APP_URL`
+3. **Test Reminder Endpoint:** Call POST `/api/internal/reminders?secret=YOUR_SECRET` manually
+
+**Idempotence Behavior:**
+- Key format: `reminder:{user_id}:{YYYY-MM-DD}`
+- Multiple calls to `/api/internal/reminders` on same day = only one email per user
+- Tracked in `email_logs.idempotency_key` (UNIQUE constraint)
+
+**Error Handling:**
+- SES failures logged with truncated error code (max 100 chars)
+- Failed sends recorded in `email_logs` with `status='failed'`
+- User-friendly: no raw errors exposed, graceful degradation
+
+**Files Created:**
+- `src/lib/email/client.ts`
+- `src/lib/email/templates/checkin-reminder.ts`
+- `supabase/migrations/013_email_logs.sql`
+- `src/app/api/internal/reminders/route.ts`
+
+**Files Modified:**
+- `vercel.json` (added reminders cron)
+- `.env.example` (added email variables)
 
 ---
 

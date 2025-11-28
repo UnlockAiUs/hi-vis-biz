@@ -3,6 +3,10 @@
     {
       "path": "/api/internal/scheduler?secret=$SCHEDULER_SECRET",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/internal/reminders?secret=$SCHEDULER_REMINDERS_SECRET",
+      "schedule": "0 8 * * *"
     }
   ]
 }
