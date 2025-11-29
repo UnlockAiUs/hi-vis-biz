@@ -190,6 +190,18 @@ Human corrections that layer on top of derived data:
 | `team_health_metrics` | Computed team health metrics per department/time window | id, org_id, department_id, time_window_start, time_window_end, participation_rate, friction_index, sentiment_score, focus_score, workload_score, burnout_risk_score, risk_level |
 | `topic_summaries` | Recurring themes by period | id, org_id, department_id, time_window_start, time_window_end, topic_key, topic_label, mention_count, sentiment_trend, summary_text |
 
+### Pattern Alerts Tables (Phase 6)
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `pattern_alerts` | Automated alerts when health metrics breach thresholds | id, org_id, department_id, alert_type, severity, status, metric_snapshot (JSONB), coaching_suggestions (JSONB[]), resolved_at, resolved_by_user_id, resolution_note, alert_date |
+
+### Privacy & Consent Tables (Phase 7)
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `user_consents` | Tracks user consent for data processing | id, org_id, user_id, consent_type, consented_at, withdrawn_at, consent_version, ip_address |
+| `data_export_requests` | GDPR data export requests | id, org_id, user_id, requested_at, status, completed_at, download_url, expires_at |
+| `archived_data_log` | Data retention compliance audit log | id, org_id, table_name, record_count, archived_at, retention_days, archive_type |
+
 ### Override Layer Tables (Phase 2)
 | Table | Purpose | Key Columns |
 |-------|---------|-------------|
@@ -252,6 +264,8 @@ Human corrections that layer on top of derived data:
 | `src/lib/utils/csv-parser.ts` | Employee CSV import | parseCSV, generateCSVTemplate, downloadCSVTemplate |
 | `src/lib/utils/ai-logger.ts` | AI call logging | logAICall, startAITimer, withAILogging |
 | `src/lib/utils/rate-limiter.ts` | API rate limiting | aiRateLimiter, authRateLimiter, checkRateLimit, getClientIP |
+| `src/lib/utils/team-health.ts` | Team health metric computations | computeTeamHealthMetrics, computeParticipationRate, computeFrictionIndex, computeSentimentScore, computeFocusScore, computeWorkloadScore, computeBurnoutRiskScore |
+| `src/lib/utils/alert-rules.ts` | Pattern alert rules engine | DEFAULT_THRESHOLDS, COACHING_TEMPLATES, evaluateAndCreateAlerts, getOpenAlerts, updateAlertStatus |
 
 ### UI Components
 
@@ -263,6 +277,7 @@ Human corrections that layer on top of derived data:
 | `src/components/ui/Skeleton.tsx` | Loading placeholders | Skeleton, SkeletonCard, SkeletonTable, etc. |
 | `src/components/ui/ActionMenu.tsx` | Dropdown action menu | default ActionMenu, ActionMenuIcons |
 | `src/components/ui/ErrorBoundary.tsx` | React error boundary wrapper | ErrorBoundary |
+| `src/components/ui/PrivacyInfoModal.tsx` | Employee-facing privacy info modal | PrivacyInfoModal |
 
 ### Auth Pages
 
@@ -411,6 +426,9 @@ Human corrections that layer on top of derived data:
 | `015_overrides_owner_notes.sql` | **Phase 2 Feature Update: workflow_overrides, owner_notes, audit trigger** |
 | `016_workflow_variants.sql` | **Phase 3 Feature Update: workflow_variants, workflow_variant_dot_links** |
 | `017_multi_language.sql` | **Phase 4 Feature Update: multi-language support, dual text storage** |
+| `018_team_health_metrics.sql` | **Phase 5 Feature Update: team_health_metrics, topic_summaries tables** |
+| `019_pattern_alerts.sql` | **Phase 6 Feature Update: pattern_alerts table with RLS policies** |
+| `020_privacy_controls.sql` | **Phase 7 Feature Update: privacy settings, consent tracking, data export requests** |
 
 ---
 
@@ -593,6 +611,9 @@ After auth success:
 - [x] `src/app/admin/workflows/[id]/WorkflowFeedback.tsx` - **Phase 2: Feedback strip (accurate/partial/incorrect)**
 - [x] `src/app/admin/workflows/[id]/OwnerNotes.tsx` - **Phase 2: Note composer with type/visibility**
 - [x] `src/app/admin/workflows/[id]/WorkflowVariants.tsx` - **Phase 3: Variant chips with OK/friction toggles**
+- [x] `src/app/admin/team-health/page.tsx` - **Phase 5: Team Health Scorecard UI**
+- [x] `src/app/admin/alerts/page.tsx` - **Phase 6: Pattern alerts management UI with coaching suggestions**
+- [x] `src/app/admin/privacy/page.tsx` - **Phase 7: Privacy & trust settings UI**
 - [x] `src/app/admin/ai-test-lab/page.tsx` - **sandbox banner**
 
 ### ✅ Admin Setup Wizard (5 files)
@@ -636,6 +657,9 @@ After auth success:
 - [x] `src/app/api/internal/scheduler/route.ts`
 - [x] `src/app/api/internal/reminders/route.ts` - **Phase 10: Check-in reminder emails**
 - [x] `src/app/api/user/language/route.ts` - **Phase 4: GET/PUT user language preference**
+- [x] `src/app/api/admin/team-health/route.ts` - **Phase 5: GET/POST team health metrics**
+- [x] `src/app/api/admin/alerts/route.ts` - **Phase 6: GET alerts list, PATCH alert status**
+- [x] `src/app/api/admin/privacy/route.ts` - **Phase 7: GET/PUT org privacy settings**
 
 ### ✅ SQL Migrations (14 files)
 - [x] `supabase/migrations/001_initial_schema.sql`
@@ -789,3 +813,21 @@ After auth success:
   - Risk levels: low (0-33), medium (34-66), high (67-100)
   - Time windows: week, month, quarter
   - Phase 5 COMPLETE - Analytics backbone shipped
+2025-11-28 cline - Completed FEATURE_UPDATE_EXECUTION_PLAN Phase 6 (Pattern Alerts):
+  - Created supabase/migrations/019_pattern_alerts.sql (pattern_alerts table with RLS)
+  - Created src/lib/utils/alert-rules.ts (DEFAULT_THRESHOLDS, COACHING_TEMPLATES, evaluateAndCreateAlerts)
+  - Created src/app/api/admin/alerts/route.ts (GET list with stats, PATCH status update)
+  - Created src/app/admin/alerts/page.tsx (expandable alert cards, coaching suggestions, action buttons)
+  - Updated src/app/admin/AdminSidebar.tsx (added Alerts nav link with bell icon)
+  - Alert types: low_participation, high_friction, sentiment_drop, workload_spike, burnout_risk, focus_drift, process_variance
+  - Alert severities: info, warning, critical
+  - Alert statuses: open, acknowledged, resolved, dismissed
+  - Phase 6 COMPLETE - Pattern alerts & manager coaching shipped
+2025-11-28 cline - Completed FEATURE_UPDATE_EXECUTION_PLAN Phase 7 (Privacy & Trust):
+  - Created supabase/migrations/020_privacy_controls.sql (privacy columns, user_consents, data_export_requests, archived_data_log)
+  - Created src/app/api/admin/privacy/route.ts (GET/PUT org privacy settings)
+  - Created src/app/admin/privacy/page.tsx (Privacy settings admin UI)
+  - Created src/components/ui/PrivacyInfoModal.tsx (employee-facing privacy info)
+  - Updated src/app/admin/AdminSidebar.tsx (added Privacy nav link)
+  - Privacy features: data retention settings, employee privacy controls, consent tracking, GDPR compliance hooks
+  - Phase 7 COMPLETE - Privacy & trust controls shipped
