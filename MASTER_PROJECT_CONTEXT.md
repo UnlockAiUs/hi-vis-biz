@@ -535,13 +535,14 @@ After auth success:
 - [x] `src/lib/ai/agents/pain-scanner.ts`
 - [x] `src/lib/ai/agents/focus-tracker.ts`
 
-### ✅ Utilities (6 files)
+### ✅ Utilities (7 files)
 - [x] `src/lib/utils/profile.ts`
 - [x] `src/lib/utils/scheduler.ts`
 - [x] `src/lib/utils/onboarding-wizard.ts`
 - [x] `src/lib/utils/csv-parser.ts`
 - [x] `src/lib/utils/ai-logger.ts`
 - [x] `src/lib/utils/rate-limiter.ts`
+- [x] `src/lib/utils/workflow-resolver.ts` - **Phase 2: Resolves effective workflows with overrides applied**
 
 ### ✅ UI Components (6 files)
 - [x] `src/components/auth/HashHandler.tsx`
@@ -565,7 +566,7 @@ After auth success:
 - [x] `src/app/dashboard/my-dots/page.tsx`
 - [x] `src/app/dashboard/session/[id]/page.tsx` - **completed session handling**
 
-### ✅ Admin Pages (11 files)
+### ✅ Admin Pages (14 files)
 - [x] `src/app/admin/layout.tsx` - **403 access denied for non-admins**
 - [x] `src/app/admin/page.tsx` - **resume setup banner, early warnings**
 - [x] `src/app/admin/AdminSidebar.tsx` - **ARIA labels, keyboard nav**
@@ -575,7 +576,10 @@ After auth success:
 - [x] `src/app/admin/members/page.tsx`
 - [x] `src/app/admin/org-chart/page.tsx`
 - [x] `src/app/admin/settings/page.tsx`
-- [x] `src/app/admin/workflows/page.tsx`
+- [x] `src/app/admin/workflows/page.tsx` - **Updated Phase 2: uses workflows/workflow_versions tables**
+- [x] `src/app/admin/workflows/[id]/page.tsx` - **Phase 2: Workflow detail view with feedback & notes**
+- [x] `src/app/admin/workflows/[id]/WorkflowFeedback.tsx` - **Phase 2: Feedback strip (accurate/partial/incorrect)**
+- [x] `src/app/admin/workflows/[id]/OwnerNotes.tsx` - **Phase 2: Note composer with type/visibility**
 - [x] `src/app/admin/ai-test-lab/page.tsx` - **sandbox banner**
 
 ### ✅ Admin Setup Wizard (5 files)
@@ -599,7 +603,7 @@ After auth success:
 - [x] `src/lib/email/client.ts` - AWS SES v2 email client with retry logic
 - [x] `src/lib/email/templates/checkin-reminder.ts` - Check-in reminder email template
 
-### ✅ API Routes (14 files)
+### ✅ API Routes (17 files)
 - [x] `src/app/api/sessions/route.ts`
 - [x] `src/app/api/sessions/[id]/route.ts`
 - [x] `src/app/api/sessions/[id]/messages/route.ts`
@@ -609,6 +613,9 @@ After auth success:
 - [x] `src/app/api/admin/invite/route.ts`
 - [x] `src/app/api/admin/settings/route.ts`
 - [x] `src/app/api/admin/ai-test/route.ts`
+- [x] `src/app/api/admin/workflows/feedback/route.ts` - **Phase 2: Submit accuracy feedback**
+- [x] `src/app/api/admin/workflows/reset/route.ts` - **Phase 2: Reset to AI suggestion**
+- [x] `src/app/api/admin/workflows/notes/route.ts` - **Phase 2: Create/archive owner notes**
 - [x] `src/app/api/analytics/org/route.ts`
 - [x] `src/app/api/analytics/departments/route.ts`
 - [x] `src/app/api/auth/link-invite/route.ts`
@@ -731,3 +738,14 @@ After auth success:
   - Added owner_notes table for contextual notes
   - Added audit trigger for override changes
   - All tables have RLS policies and indexes
+2025-11-28 cline - Completed FEATURE_UPDATE_EXECUTION_PLAN Phase 2 (UI layer):
+  - Created src/app/admin/workflows/[id]/page.tsx (workflow detail view)
+  - Created src/app/admin/workflows/[id]/WorkflowFeedback.tsx (feedback strip)
+  - Created src/app/admin/workflows/[id]/OwnerNotes.tsx (note composer)
+  - Created src/app/api/admin/workflows/feedback/route.ts (POST feedback)
+  - Created src/app/api/admin/workflows/reset/route.ts (POST reset)
+  - Created src/app/api/admin/workflows/notes/route.ts (POST/DELETE notes)
+  - Updated src/app/admin/workflows/page.tsx to use new workflow tables
+  - Created src/lib/utils/workflow-resolver.ts for AI agents
+  - Fixed TypeScript build error (Supabase FK array to object transform)
+  - Phase 2 COMPLETE - Owner Feedback Controls & Notes UI shipped
