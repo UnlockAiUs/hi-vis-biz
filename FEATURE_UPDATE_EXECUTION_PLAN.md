@@ -28,6 +28,51 @@ This plan **builds on** the now-stable production system and is designed for:
 
 ## 1. Ground Rules for All Agents
 
+### 1.0 CRITICAL: MCP Server Requirements for Autonomous Execution
+
+**⚠️ AI agents MUST use MCP servers for autonomous execution without human intervention:**
+
+| Service | MCP Server | Required Operations |
+|---------|-----------|---------------------|
+| **Supabase** | `supabase` | Database migrations, schema changes, SQL execution, table management |
+| **Vercel** | `vercel` | Deployments, environment variables, project management |
+| **Stripe** | `stripe` | Billing products, prices, subscriptions, customer management |
+
+**MCP Usage Rules:**
+1. **ALWAYS use Supabase MCP** (`use_mcp_tool` with `server_name: "supabase"`) for:
+   - Running migrations via `execute_sql` or `apply_migration`
+   - Creating/modifying tables, indexes, triggers, RLS policies
+   - Verifying schema changes via `list_tables`
+   - Never ask humans to manually run SQL - do it via MCP
+
+2. **ALWAYS use Vercel MCP** (`use_mcp_tool` with `server_name: "vercel"`) for:
+   - Setting environment variables via `create_env_var` / `update_env_var`
+   - Checking deployments via `list_deployments`
+   - Triggering redeployments via `redeploy`
+
+3. **ALWAYS use Stripe MCP** (`use_mcp_tool` with `server_name: "stripe"`) for:
+   - Creating products and prices
+   - Managing subscriptions
+   - Customer operations
+
+**Project IDs:**
+- Supabase Project ID: `ldmztpapxpirxpcklizs`
+- Vercel Project: `hi-vis-biz` (check via `list_projects`)
+
+**Example MCP Usage:**
+```xml
+<use_mcp_tool>
+<server_name>supabase</server_name>
+<tool_name>execute_sql</tool_name>
+<arguments>
+{
+  "project_id": "ldmztpapxpirxpcklizs",
+  "query": "CREATE TABLE example (...)"
+}
+</arguments>
+</use_mcp_tool>
+```
+
 ### 1.1 Files to Read First
 
 Before touching anything:
@@ -65,8 +110,10 @@ Before touching anything:
 
 - ✅ Safe for autonomous agents (no prod secrets, migrations clearly separated).
 - ⚠️ Requires Supabase migration:
-  - Agents **write** migration files and update schema docs.
-  - Human reviews/runs them in production.
+  - Agents **write** migration files to `supabase/migrations/`
+  - Agents **execute** migrations via Supabase MCP (`execute_sql` or `apply_migration`)
+  - Agents **verify** via `list_tables` after execution
+  - **NO human intervention required for DB changes**
 - 🔑 Requires human policy / UX decisions:
   - Agents prepare options, scaffolding, and comments.
   - Human chooses defaults and final copy.

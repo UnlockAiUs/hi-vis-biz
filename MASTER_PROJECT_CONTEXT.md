@@ -13,7 +13,7 @@ last_updated: 2025-11-28
 last_agent: cline
 purpose: SINGLE SOURCE OF TRUTH for all AI agents working on this project
 format: optimized for AI token efficiency
-documentation_status: COMPLETE - all 79 code files + 13 SQL migrations documented
+documentation_status: COMPLETE - all 79 code files + 14 SQL migrations documented
 execution_plan_status: ALL 12 PHASES COMPLETE - PRODUCTION READY
 rebrand_status: COMPLETE - rebranded from Hi-Vis Biz to VizDots
 test_framework: COMPLETE - Vitest (unit) + Playwright (E2E)
@@ -118,7 +118,7 @@ VizDots Terminology:
 │   │   ├── supabase/           # Supabase clients
 │   │   └── utils/              # Utility functions
 │   └── types/                  # TypeScript types
-├── supabase/migrations/        # Database migrations (001-012)
+├── supabase/migrations/        # Database migrations (001-014)
 ├── tests/                      # Test files
 │   ├── setup.ts                # Test configuration
 │   ├── unit/                   # Vitest unit tests
@@ -393,6 +393,8 @@ Human corrections that layer on top of derived data:
 | `010_subscription_trial.sql` | Trial/subscription fields |
 | `011_ai_logs.sql` | AI call logging table for debugging |
 | `012_scheduler_idempotence.sql` | **Unique constraint for scheduler idempotence** - prevents duplicate sessions |
+| `013_email_logs.sql` | **Phase 10: email tracking/idempotence** |
+| `014_truth_layers.sql` | **Phase 1 Feature Update: workflows, workflow_versions, audit_log, fact immutability** |
 
 ---
 
