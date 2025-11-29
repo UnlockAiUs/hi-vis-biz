@@ -65,6 +65,9 @@ export default function SetupStep3Page() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingData, setEditingData] = useState<EmployeeEntry | null>(null)
   
+  // Reporting structure section
+  const [showReportingSection, setShowReportingSection] = useState(false)
+  
   // CSV upload state
   const [csvParseResult, setCsvParseResult] = useState<ParseResult | null>(null)
   const [showCsvPreview, setShowCsvPreview] = useState(false)
@@ -941,6 +944,169 @@ export default function SetupStep3Page() {
           </>
         )}
       </div>
+
+      {/* Reporting Structure Section */}
+      {employees.length > 0 && getSupervisors().length > 0 && (
+        <div className="mt-6 bg-white shadow rounded-lg overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowReportingSection(!showReportingSection)}
+            className="w-full px-4 sm:px-6 py-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <h3 className="text-base font-semibold text-gray-900">
+                  Reporting Structure (Optional)
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Quickly assign who reports to whom
+                </p>
+              </div>
+            </div>
+            <svg
+              className={`w-5 h-5 text-gray-500 transition-transform ${showReportingSection ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          {showReportingSection && (
+            <div className="p-4 sm:p-6 border-t border-gray-200">
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-700">
+                  <strong>Tip:</strong> For each supervisor below, select who reports to them. 
+                  You can also set this individually when adding or editing people above.
+                </p>
+              </div>
+              
+              <div className="space-y-6">
+                {getSupervisors().map((supervisor) => {
+                  // Get current direct reports for this supervisor
+                  const directReports = employees.filter(emp => emp.supervisorId === supervisor.id)
+                  // Get available people who can be assigned (not supervisors themselves, not already assigned elsewhere)
+                  const availablePeople = employees.filter(emp => 
+                    emp.id !== supervisor.id && 
+                    !emp.hasDirectReports // Non-supervisors are typically the ones reporting
+                  )
+                  
+                  return (
+                    <div key={supervisor.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-blue-700">
+                              {supervisor.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">{supervisor.name}</h4>
+                            <p className="text-xs text-gray-500">{supervisor.title} • {supervisor.department}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Direct Reports ({directReports.length})
+                        </label>
+                        
+                        {/* Current direct reports */}
+                        {directReports.length > 0 && (
+                          <div className="mb-3 flex flex-wrap gap-2">
+                            {directReports.map(report => (
+                              <span
+                                key={report.id}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm"
+                              >
+                                {report.name}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    // Remove this person from reporting to this supervisor
+                                    const updatedEmployees = employees.map(emp =>
+                                      emp.id === report.id ? { ...emp, supervisorId: undefined } : emp
+                                    )
+                                    setEmployees(updatedEmployees)
+                                    const newState: OnboardingState = { ...state, employees: updatedEmployees }
+                                    setState(newState)
+                                    saveOnboardingState(newState)
+                                  }}
+                                  className="ml-1 text-green-600 hover:text-green-800"
+                                >
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Add direct report dropdown */}
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            if (!e.target.value) return
+                            const personId = e.target.value
+                            const updatedEmployees = employees.map(emp =>
+                              emp.id === personId ? { ...emp, supervisorId: supervisor.id } : emp
+                            )
+                            setEmployees(updatedEmployees)
+                            const newState: OnboardingState = { ...state, employees: updatedEmployees }
+                            setState(newState)
+                            saveOnboardingState(newState)
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        >
+                          <option value="">+ Add a direct report...</option>
+                          {availablePeople
+                            .filter(p => p.supervisorId !== supervisor.id) // Exclude already assigned
+                            .map(person => (
+                              <option key={person.id} value={person.id}>
+                                {person.name} ({person.title})
+                                {person.supervisorId ? ` — Currently reports to ${getSupervisorName(person.supervisorId)}` : ''}
+                              </option>
+                            ))
+                          }
+                        </select>
+                        
+                        {directReports.length === 0 && (
+                          <p className="mt-2 text-xs text-gray-500">
+                            No direct reports assigned yet
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              
+              {/* Summary */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">
+                    {getSupervisors().length} supervisor{getSupervisors().length !== 1 ? 's' : ''} • {' '}
+                    {employees.filter(e => e.supervisorId).length} of {employees.filter(e => !e.hasDirectReports).length} people assigned
+                  </span>
+                  {employees.filter(e => !e.supervisorId && !e.hasDirectReports).length > 0 && (
+                    <span className="text-amber-600">
+                      {employees.filter(e => !e.supervisorId && !e.hasDirectReports).length} unassigned
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="mt-6 flex flex-col sm:flex-row justify-between gap-3">

@@ -34,10 +34,14 @@ import {
   type ScheduleSettings,
 } from '@/lib/utils/onboarding-wizard'
 
+type SetupPhase = 'configuring' | 'creating' | 'complete' | 'error'
+
 export default function SetupStep4Page() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [setupPhase, setSetupPhase] = useState<SetupPhase>('configuring')
+  const [setupResult, setSetupResult] = useState<{ orgName: string; employeeCount: number; invitesSent: number } | null>(null)
   const [state, setState] = useState<OnboardingState>(INITIAL_ONBOARDING_STATE)
   const [scheduleSettings, setScheduleSettings] = useState<ScheduleSettings>(DEFAULT_SCHEDULE_SETTINGS)
   const [error, setError] = useState<string | null>(null)
@@ -144,6 +148,7 @@ export default function SetupStep4Page() {
 
   const handleSubmit = async () => {
     setSubmitting(true)
+    setSetupPhase('creating')
     setError(null)
     
     try {
@@ -169,13 +174,25 @@ export default function SetupStep4Page() {
       // Clear wizard state
       clearOnboardingState()
       
-      // Redirect to admin dashboard with success message
-      router.push('/admin?setup=complete')
+      // Store result for success screen
+      setSetupResult({
+        orgName: state.organization?.name || 'Your Organization',
+        employeeCount: state.employees.length,
+        invitesSent: data.summary?.invitesSent || state.employees.length,
+      })
+      setSetupPhase('complete')
+      
     } catch (err) {
       console.error('Setup error:', err)
       setError(err instanceof Error ? err.message : 'Failed to complete setup')
+      setSetupPhase('error')
       setSubmitting(false)
     }
+  }
+
+  const handleGoToDashboard = () => {
+    // Use full page reload to avoid RSC hydration conflicts
+    window.location.href = '/admin?setup=complete'
   }
 
   // Calculate stats
@@ -189,6 +206,111 @@ export default function SetupStep4Page() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+      </div>
+    )
+  }
+
+  // Creating organization screen
+  if (setupPhase === 'creating') {
+    return (
+      <div className="max-w-md mx-auto text-center py-12">
+        <div className="mb-8">
+          <div className="w-20 h-20 mx-auto bg-yellow-100 rounded-full flex items-center justify-center mb-6">
+            <svg className="animate-spin h-10 w-10 text-yellow-500" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Creating Your Organization
+          </h2>
+          <p className="text-gray-600">
+            Please wait while we set everything up...
+          </p>
+        </div>
+        
+        <div className="space-y-3 text-left bg-gray-50 rounded-lg p-6">
+          <div className="flex items-center text-sm text-gray-600">
+            <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            Creating organization &quot;{state.organization?.name}&quot;
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <svg className="animate-spin w-5 h-5 text-yellow-500 mr-3" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            Setting up {state.departments.length} departments
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <svg className="w-5 h-5 text-gray-300 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+            </svg>
+            Sending invites to {state.employees.length} team members
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Setup complete success screen
+  if (setupPhase === 'complete' && setupResult) {
+    return (
+      <div className="max-w-md mx-auto text-center py-12">
+        <div className="mb-8">
+          <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6">
+            <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            🎉 Welcome to VizDots!
+          </h2>
+          <p className="text-gray-600">
+            Your organization is ready to go.
+          </p>
+        </div>
+
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8 text-left">
+          <h3 className="font-medium text-green-800 mb-3">Setup Complete!</h3>
+          <ul className="space-y-2 text-sm text-green-700">
+            <li className="flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <strong>{setupResult.orgName}</strong> created
+            </li>
+            <li className="flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              {setupResult.invitesSent} invitation emails sent
+            </li>
+            <li className="flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Check-ins scheduled
+            </li>
+          </ul>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-left">
+          <h4 className="text-sm font-medium text-blue-800 mb-2">What&apos;s Next?</h4>
+          <p className="text-sm text-blue-700">
+            Your team members will receive invitation emails shortly. Once they accept 
+            and set up their accounts, they&apos;ll start receiving check-in prompts based 
+            on your configured schedule.
+          </p>
+        </div>
+
+        <button
+          onClick={handleGoToDashboard}
+          className="w-full px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+        >
+          Go to Admin Dashboard →
+        </button>
       </div>
     )
   }
