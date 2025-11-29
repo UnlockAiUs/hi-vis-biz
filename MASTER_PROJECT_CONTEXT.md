@@ -402,6 +402,8 @@ Human corrections that layer on top of derived data:
 | `013_email_logs.sql` | **Phase 10: email tracking/idempotence** |
 | `014_truth_layers.sql` | **Phase 1 Feature Update: workflows, workflow_versions, audit_log, fact immutability** |
 | `015_overrides_owner_notes.sql` | **Phase 2 Feature Update: workflow_overrides, owner_notes, audit trigger** |
+| `016_workflow_variants.sql` | **Phase 3 Feature Update: workflow_variants, workflow_variant_dot_links** |
+| `017_multi_language.sql` | **Phase 4 Feature Update: multi-language support, dual text storage** |
 
 ---
 
@@ -535,7 +537,7 @@ After auth success:
 - [x] `src/lib/ai/agents/pain-scanner.ts`
 - [x] `src/lib/ai/agents/focus-tracker.ts`
 
-### ✅ Utilities (7 files)
+### ✅ Utilities (8 files)
 - [x] `src/lib/utils/profile.ts`
 - [x] `src/lib/utils/scheduler.ts`
 - [x] `src/lib/utils/onboarding-wizard.ts`
@@ -543,6 +545,7 @@ After auth success:
 - [x] `src/lib/utils/ai-logger.ts`
 - [x] `src/lib/utils/rate-limiter.ts`
 - [x] `src/lib/utils/workflow-resolver.ts` - **Phase 2: Resolves effective workflows with overrides applied**
+- [x] `src/lib/utils/translation.ts` - **Phase 4: Multi-language translation utilities (translateToEnglish, detectLanguage, processAnswerForStorage)**
 
 ### ✅ UI Components (6 files)
 - [x] `src/components/auth/HashHandler.tsx`
@@ -560,11 +563,12 @@ After auth success:
 - [x] `src/app/auth/set-password/page.tsx` - **handles invite + recovery**
 - [x] `src/app/auth/auth-code-error/page.tsx`
 
-### ✅ Dashboard Pages (4 files)
-- [x] `src/app/dashboard/layout.tsx` - **no-membership handling**
+### ✅ Dashboard Pages (5 files)
+- [x] `src/app/dashboard/layout.tsx` - **no-membership handling, Settings nav link**
 - [x] `src/app/dashboard/page.tsx` - **Day 0 empty state**
 - [x] `src/app/dashboard/my-dots/page.tsx`
 - [x] `src/app/dashboard/session/[id]/page.tsx` - **completed session handling**
+- [x] `src/app/dashboard/settings/page.tsx` - **Phase 4: Employee language preference settings**
 
 ### ✅ Admin Pages (14 files)
 - [x] `src/app/admin/layout.tsx` - **403 access denied for non-admins**
@@ -580,6 +584,7 @@ After auth success:
 - [x] `src/app/admin/workflows/[id]/page.tsx` - **Phase 2: Workflow detail view with feedback & notes**
 - [x] `src/app/admin/workflows/[id]/WorkflowFeedback.tsx` - **Phase 2: Feedback strip (accurate/partial/incorrect)**
 - [x] `src/app/admin/workflows/[id]/OwnerNotes.tsx` - **Phase 2: Note composer with type/visibility**
+- [x] `src/app/admin/workflows/[id]/WorkflowVariants.tsx` - **Phase 3: Variant chips with OK/friction toggles**
 - [x] `src/app/admin/ai-test-lab/page.tsx` - **sandbox banner**
 
 ### ✅ Admin Setup Wizard (5 files)
@@ -603,7 +608,7 @@ After auth success:
 - [x] `src/lib/email/client.ts` - AWS SES v2 email client with retry logic
 - [x] `src/lib/email/templates/checkin-reminder.ts` - Check-in reminder email template
 
-### ✅ API Routes (17 files)
+### ✅ API Routes (18 files)
 - [x] `src/app/api/sessions/route.ts`
 - [x] `src/app/api/sessions/[id]/route.ts`
 - [x] `src/app/api/sessions/[id]/messages/route.ts`
@@ -616,11 +621,13 @@ After auth success:
 - [x] `src/app/api/admin/workflows/feedback/route.ts` - **Phase 2: Submit accuracy feedback**
 - [x] `src/app/api/admin/workflows/reset/route.ts` - **Phase 2: Reset to AI suggestion**
 - [x] `src/app/api/admin/workflows/notes/route.ts` - **Phase 2: Create/archive owner notes**
+- [x] `src/app/api/admin/workflows/variants/route.ts` - **Phase 3: GET/POST/PATCH workflow variants**
 - [x] `src/app/api/analytics/org/route.ts`
 - [x] `src/app/api/analytics/departments/route.ts`
 - [x] `src/app/api/auth/link-invite/route.ts`
 - [x] `src/app/api/internal/scheduler/route.ts`
 - [x] `src/app/api/internal/reminders/route.ts` - **Phase 10: Check-in reminder emails**
+- [x] `src/app/api/user/language/route.ts` - **Phase 4: GET/PUT user language preference**
 
 ### ✅ SQL Migrations (14 files)
 - [x] `supabase/migrations/001_initial_schema.sql`
@@ -749,3 +756,18 @@ After auth success:
   - Created src/lib/utils/workflow-resolver.ts for AI agents
   - Fixed TypeScript build error (Supabase FK array to object transform)
   - Phase 2 COMPLETE - Owner Feedback Controls & Notes UI shipped
+2025-11-28 cline - Completed FEATURE_UPDATE_EXECUTION_PLAN Phase 3 (Variants):
+  - Created supabase/migrations/016_workflow_variants.sql
+  - Created src/app/api/admin/workflows/variants/route.ts (GET/POST/PATCH)
+  - Created src/app/admin/workflows/[id]/WorkflowVariants.tsx
+  - Updated workflow detail page to include WorkflowVariants component
+  - Phase 3 COMPLETE - Variant handling & friction tracking shipped
+2025-11-28 cline - Completed FEATURE_UPDATE_EXECUTION_PLAN Phase 4 (Multi-Language):
+  - Created supabase/migrations/017_multi_language.sql (executed via MCP)
+  - Created src/lib/utils/translation.ts (translateToEnglish, detectLanguage, processAnswerForStorage)
+  - Created src/app/api/user/language/route.ts (GET/PUT language preference)
+  - Created src/app/dashboard/settings/page.tsx (employee language settings UI)
+  - Updated src/app/dashboard/layout.tsx (added Settings nav link)
+  - 11 supported languages: en, es, fr, de, pt, it, nl, pl, ja, zh, ko
+  - Dual text storage: original language + English translation for analytics
+  - Phase 4 COMPLETE - Multi-language support shipped

@@ -23,6 +23,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import WorkflowFeedback from './WorkflowFeedback'
 import OwnerNotes from './OwnerNotes'
+import WorkflowVariants from './WorkflowVariants'
 
 interface WorkflowDetailPageProps {
   params: Promise<{ id: string }>
@@ -247,6 +248,9 @@ export default async function WorkflowDetailPage({ params }: WorkflowDetailPageP
           )}
         </div>
       </div>
+
+      {/* Workflow Variants - Phase 3 */}
+      <WorkflowVariants workflowId={id} />
 
       {/* Owner Notes - Phase 2.3 */}
       <OwnerNotes 
