@@ -211,9 +211,55 @@ An admin-only page to test AI agents and verify they're working correctly.
 2. See "Trial ends on [date]"
 3. Shows days remaining
 
-### After Trial
-- Upgrade to continue service
-- Stripe integration coming soon
+### Pricing Model
+VizDots uses a **per-seat pricing** model:
+
+| Component | Price |
+|-----------|-------|
+| **Base fee** | $29/month per organization |
+| **Per-seat fee** | $3/month per active user |
+
+**Example:** An organization with 10 active employees pays:
+- Base: $29
+- Seats: 10 × $3 = $30
+- **Total: $59/month**
+
+### Important: Users Cannot Be Deleted
+- Employees can only be **deactivated**, not deleted
+- Deactivated users are **not charged** (inactive users free)
+- This preserves historical data and audit trails
+- You can reactivate users at any time
+
+### Upgrading from Trial
+1. Go to **Admin → Billing**
+2. Click **"Start Paid Plan"**
+3. You'll be redirected to Stripe checkout
+4. Enter payment information
+5. Subscription starts immediately
+
+### Managing Your Subscription
+1. Go to **Admin → Billing**
+2. Click **"Manage Billing"**
+3. Opens Stripe Customer Portal where you can:
+   - Update payment method
+   - View invoices
+   - Cancel subscription
+
+### Subscription States
+| State | Meaning |
+|-------|---------|
+| **Trialing** | Within 30-day free trial |
+| **Active** | Paid subscription active |
+| **Past Due** | Payment failed, service continues briefly |
+| **Canceled** | Subscription ended |
+| **Expired** | Trial ended without upgrade |
+
+### Check-in Reminder Emails
+VizDots automatically sends reminder emails to employees:
+- Sent when employees have pending check-ins
+- Scheduled via Vercel cron jobs
+- Uses AWS SES for reliable delivery
+- Includes direct link to complete check-in
 
 ---
 
