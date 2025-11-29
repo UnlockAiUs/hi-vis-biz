@@ -45,7 +45,16 @@ export async function POST() {
       )
     }
 
-    const org = membership.organizations as { id: string; name: string; stripe_customer_id: string | null }
+    // Handle Supabase FK relation - can return array
+    const orgRaw = membership.organizations as unknown
+    const org = (Array.isArray(orgRaw) ? orgRaw[0] : orgRaw) as { id: string; name: string; stripe_customer_id: string | null }
+
+    if (!org) {
+      return NextResponse.json(
+        { error: 'Organization not found' },
+        { status: 404 }
+      )
+    }
 
     if (!org.stripe_customer_id) {
       return NextResponse.json(
