@@ -9,10 +9,12 @@
  * EXPORTS: SetupStep3Page (default)
  * 
  * KEY FEATURES:
- * - Manual employee entry form (name, email, department, title)
+ * - Manual employee entry form (name, email, department, title, supervisor)
+ * - Supervisor assignment via "Reports To" dropdown
  * - CSV upload with drag-and-drop
  * - CSV template download
  * - Inline editing/deletion
+ * - Responsive mobile-friendly design
  * 
  * STATE: Saves to localStorage via onboarding-wizard utilities
  * PREV: /admin/setup/departments (Step 2) | NEXT: /admin/setup/settings (Step 4)
@@ -56,6 +58,7 @@ export default function SetupStep3Page() {
     title: '',
     hasDirectReports: false,
     canViewReports: false,
+    supervisorId: '',
   })
   
   // Edit mode state
@@ -93,6 +96,18 @@ export default function SetupStep3Page() {
     setLoading(false)
   }, [router])
 
+  // Get supervisors (people with hasDirectReports = true)
+  const getSupervisors = (excludeId?: string) => {
+    return employees.filter(emp => emp.hasDirectReports && emp.id !== excludeId)
+  }
+
+  // Get supervisor name by ID
+  const getSupervisorName = (supervisorId?: string) => {
+    if (!supervisorId) return null
+    const supervisor = employees.find(emp => emp.id === supervisorId)
+    return supervisor?.name || null
+  }
+
   const validateForm = (): string | null => {
     if (!formData.name.trim()) return 'Name is required'
     if (!formData.email.trim()) return 'Email is required'
@@ -127,6 +142,7 @@ export default function SetupStep3Page() {
       title: formData.title.trim(),
       hasDirectReports: formData.hasDirectReports,
       canViewReports: formData.canViewReports,
+      supervisorId: formData.supervisorId || undefined,
     }
     
     const updatedEmployees = [...employees, newEmployee]
@@ -140,6 +156,7 @@ export default function SetupStep3Page() {
       title: '',
       hasDirectReports: false,
       canViewReports: false,
+      supervisorId: '',
     })
     
     // Save to state
@@ -190,12 +207,19 @@ export default function SetupStep3Page() {
       setError('An employee with this email already exists')
       return
     }
-    
-    setError(null)
-    
-    const updatedEmployees = employees.map(emp =>
+
+    // If this person is no longer a supervisor, clear any supervisorId references to them
+    let updatedEmployees = employees.map(emp =>
       emp.id === editingId ? { ...editingData } : emp
     )
+    
+    if (!editingData.hasDirectReports) {
+      updatedEmployees = updatedEmployees.map(emp => 
+        emp.supervisorId === editingId ? { ...emp, supervisorId: undefined } : emp
+      )
+    }
+    
+    setError(null)
     setEmployees(updatedEmployees)
     setEditingId(null)
     setEditingData(null)
@@ -218,7 +242,11 @@ export default function SetupStep3Page() {
   const handleDelete = (id: string) => {
     if (!confirm('Are you sure you want to remove this person?')) return
     
-    const updatedEmployees = employees.filter(emp => emp.id !== id)
+    // Also clear any supervisorId references to this person
+    let updatedEmployees = employees.filter(emp => emp.id !== id)
+    updatedEmployees = updatedEmployees.map(emp => 
+      emp.supervisorId === id ? { ...emp, supervisorId: undefined } : emp
+    )
     setEmployees(updatedEmployees)
     
     // Save to state
@@ -342,22 +370,22 @@ export default function SetupStep3Page() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4 sm:px-0">
       {/* Step Header */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
           People Import
         </h2>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-sm sm:text-base text-gray-600">
           Step 3 of 4: Add your team members
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 mb-6">
+      <div className="flex border-b border-gray-200 mb-4 sm:mb-6">
         <button
           onClick={() => setActiveTab('manual')}
-          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'manual'
               ? 'border-yellow-500 text-yellow-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -367,7 +395,7 @@ export default function SetupStep3Page() {
         </button>
         <button
           onClick={() => setActiveTab('csv')}
-          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'csv'
               ? 'border-yellow-500 text-yellow-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -385,96 +413,124 @@ export default function SetupStep3Page() {
 
       {/* Manual Entry Tab */}
       {activeTab === 'manual' && (
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow rounded-lg p-4 sm:p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Add Person</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
-                placeholder="John Smith"
-              />
+          <div className="space-y-4">
+            {/* Row 1: Name and Email */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base"
+                  placeholder="John Smith"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base"
+                  placeholder="john@company.com"
+                />
+              </div>
             </div>
-            
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
-                placeholder="john@company.com"
-              />
+
+            {/* Row 2: Department and Title */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
+                  Department <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="department"
+                  value={formData.department}
+                  onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base"
+                >
+                  <option value="">Select department</option>
+                  {state.departments.map(dept => (
+                    <option key={dept.id} value={dept.name}>{dept.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                  Job Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base"
+                  placeholder="Software Engineer"
+                />
+              </div>
             </div>
-            
+
+            {/* Row 3: Reports To */}
             <div>
-              <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
-                Department *
+              <label htmlFor="supervisorId" className="block text-sm font-medium text-gray-700 mb-1">
+                Reports To
               </label>
               <select
-                id="department"
-                value={formData.department}
-                onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                id="supervisorId"
+                value={formData.supervisorId}
+                onChange={(e) => setFormData(prev => ({ ...prev, supervisorId: e.target.value }))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base"
               >
-                <option value="">Select department</option>
-                {state.departments.map(dept => (
-                  <option key={dept.id} value={dept.name}>{dept.name}</option>
+                <option value="">No direct supervisor</option>
+                {getSupervisors().map(sup => (
+                  <option key={sup.id} value={sup.id}>{sup.name} ({sup.title})</option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Only people marked as &quot;Has direct reports&quot; appear here
+              </p>
             </div>
-            
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                Job Title *
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
-                placeholder="Software Engineer"
-              />
-            </div>
-          </div>
           
-          <div className="flex flex-wrap gap-4 mb-4">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={formData.hasDirectReports}
-                onChange={(e) => setFormData(prev => ({ ...prev, hasDirectReports: e.target.checked }))}
-                className="h-4 w-4 text-yellow-500 focus:ring-yellow-500 border-gray-300 rounded"
-              />
-              <span className="ml-2 text-sm text-gray-700">Has direct reports (is a supervisor)</span>
-            </label>
-            
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={formData.canViewReports}
-                onChange={(e) => setFormData(prev => ({ ...prev, canViewReports: e.target.checked }))}
-                className="h-4 w-4 text-yellow-500 focus:ring-yellow-500 border-gray-300 rounded"
-              />
-              <span className="ml-2 text-sm text-gray-700">Can view team reports</span>
-            </label>
+            {/* Checkboxes */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.hasDirectReports}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hasDirectReports: e.target.checked }))}
+                  className="h-5 w-5 text-yellow-500 focus:ring-yellow-500 border-gray-300 rounded"
+                />
+                <span className="ml-2 text-sm text-gray-700">Has direct reports (is a supervisor)</span>
+              </label>
+              
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.canViewReports}
+                  onChange={(e) => setFormData(prev => ({ ...prev, canViewReports: e.target.checked }))}
+                  className="h-5 w-5 text-yellow-500 focus:ring-yellow-500 border-gray-300 rounded"
+                />
+                <span className="ml-2 text-sm text-gray-700">Can view team reports</span>
+              </label>
+            </div>
           </div>
           
           <button
             type="button"
             onClick={handleAddEmployee}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+            className="mt-6 w-full sm:w-auto px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
           >
             Add Person
           </button>
@@ -483,7 +539,7 @@ export default function SetupStep3Page() {
 
       {/* CSV Upload Tab */}
       {activeTab === 'csv' && !showCsvPreview && (
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow rounded-lg p-4 sm:p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Upload CSV</h3>
           
           <div className="mb-4">
@@ -538,7 +594,7 @@ export default function SetupStep3Page() {
 
       {/* CSV Preview Modal */}
       {showCsvPreview && csvParseResult && (
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow rounded-lg p-4 sm:p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             CSV Import Preview
           </h3>
@@ -580,17 +636,17 @@ export default function SetupStep3Page() {
                     <tr>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Department</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Title</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200 max-h-60 overflow-y-auto">
                     {csvParseResult.employees.slice(0, 10).map((emp, i) => (
                       <tr key={i}>
                         <td className="px-4 py-2 text-sm text-gray-900">{emp.name}</td>
-                        <td className="px-4 py-2 text-sm text-gray-500">{emp.email}</td>
-                        <td className="px-4 py-2 text-sm text-gray-500">{emp.department}</td>
-                        <td className="px-4 py-2 text-sm text-gray-500">{emp.title}</td>
+                        <td className="px-4 py-2 text-sm text-gray-500 truncate max-w-[200px]">{emp.email}</td>
+                        <td className="px-4 py-2 text-sm text-gray-500 hidden sm:table-cell">{emp.department}</td>
+                        <td className="px-4 py-2 text-sm text-gray-500 hidden sm:table-cell">{emp.title}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -604,17 +660,17 @@ export default function SetupStep3Page() {
             </div>
           )}
           
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col sm:flex-row justify-end gap-3">
             <button
               onClick={handleCancelCSVImport}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirmCSVImport}
               disabled={csvParseResult.employees.length === 0}
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Import {csvParseResult.employees.length} People
             </button>
@@ -623,7 +679,7 @@ export default function SetupStep3Page() {
       )}
 
       {/* People List */}
-      <div className="mt-6 bg-white shadow rounded-lg p-6">
+      <div className="mt-6 bg-white shadow rounded-lg p-4 sm:p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
           People ({employees.length})
         </h3>
@@ -637,129 +693,261 @@ export default function SetupStep3Page() {
             <p className="text-xs text-gray-400">Add people manually or upload a CSV</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {employees.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-gray-50">
-                    {editingId === emp.id && editingData ? (
-                      <>
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={editingData.name}
-                            onChange={(e) => setEditingData({ ...editingData, name: e.target.value })}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="email"
-                            value={editingData.email}
-                            onChange={(e) => setEditingData({ ...editingData, email: e.target.value })}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <select
-                            value={editingData.department}
-                            onChange={(e) => setEditingData({ ...editingData, department: e.target.value })}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          >
-                            {state.departments.map(dept => (
-                              <option key={dept.id} value={dept.name}>{dept.name}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={editingData.title}
-                            onChange={(e) => setEditingData({ ...editingData, title: e.target.value })}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-right space-x-1">
-                          <button
-                            onClick={handleSaveEdit}
-                            className="text-green-600 hover:text-green-800 p-1"
-                            title="Save"
-                          >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="text-gray-400 hover:text-gray-600 p-1"
-                            title="Cancel"
-                          >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          <div className="flex items-center">
+          <>
+            {/* Mobile Card View */}
+            <div className="block sm:hidden space-y-3">
+              {employees.map((emp) => (
+                <div key={emp.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  {editingId === emp.id && editingData ? (
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={editingData.name}
+                        onChange={(e) => setEditingData({ ...editingData, name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        placeholder="Name"
+                      />
+                      <input
+                        type="email"
+                        value={editingData.email}
+                        onChange={(e) => setEditingData({ ...editingData, email: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        placeholder="Email"
+                      />
+                      <select
+                        value={editingData.department}
+                        onChange={(e) => setEditingData({ ...editingData, department: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      >
+                        {state.departments.map(dept => (
+                          <option key={dept.id} value={dept.name}>{dept.name}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        value={editingData.title}
+                        onChange={(e) => setEditingData({ ...editingData, title: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        placeholder="Title"
+                      />
+                      <select
+                        value={editingData.supervisorId || ''}
+                        onChange={(e) => setEditingData({ ...editingData, supervisorId: e.target.value || undefined })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      >
+                        <option value="">No supervisor</option>
+                        {getSupervisors(editingId).map(sup => (
+                          <option key={sup.id} value={sup.id}>{sup.name}</option>
+                        ))}
+                      </select>
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          onClick={handleCancelEdit}
+                          className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSaveEdit}
+                          className="px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="font-medium text-gray-900 flex items-center flex-wrap gap-2">
                             {emp.name}
                             {emp.hasDirectReports && (
-                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                 Supervisor
                               </span>
                             )}
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{emp.email}</td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{emp.department}</td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{emp.title}</td>
-                        <td className="px-4 py-3 text-right space-x-1">
+                          <div className="text-sm text-gray-500 truncate">{emp.email}</div>
+                        </div>
+                        <div className="flex gap-1">
                           <button
                             onClick={() => handleStartEdit(emp)}
                             className="text-gray-400 hover:text-blue-600 p-1"
-                            title="Edit"
                           >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
                           </button>
                           <button
                             onClick={() => handleDelete(emp.id)}
                             className="text-gray-400 hover:text-red-600 p-1"
-                            title="Delete"
                           >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
-                        </td>
-                      </>
-                    )}
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <span className="inline-block bg-gray-100 rounded px-2 py-0.5 mr-2">{emp.department}</span>
+                        {emp.title}
+                      </div>
+                      {emp.supervisorId && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Reports to: {getSupervisorName(emp.supervisorId)}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reports To</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {employees.map((emp) => (
+                    <tr key={emp.id} className="hover:bg-gray-50">
+                      {editingId === emp.id && editingData ? (
+                        <>
+                          <td className="px-4 py-2">
+                            <input
+                              type="text"
+                              value={editingData.name}
+                              onChange={(e) => setEditingData({ ...editingData, name: e.target.value })}
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm min-w-[120px]"
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="email"
+                              value={editingData.email}
+                              onChange={(e) => setEditingData({ ...editingData, email: e.target.value })}
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm min-w-[160px]"
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <select
+                              value={editingData.department}
+                              onChange={(e) => setEditingData({ ...editingData, department: e.target.value })}
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm min-w-[100px]"
+                            >
+                              {state.departments.map(dept => (
+                                <option key={dept.id} value={dept.name}>{dept.name}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="text"
+                              value={editingData.title}
+                              onChange={(e) => setEditingData({ ...editingData, title: e.target.value })}
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm min-w-[120px]"
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <select
+                              value={editingData.supervisorId || ''}
+                              onChange={(e) => setEditingData({ ...editingData, supervisorId: e.target.value || undefined })}
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm min-w-[120px]"
+                            >
+                              <option value="">None</option>
+                              {getSupervisors(editingId).map(sup => (
+                                <option key={sup.id} value={sup.id}>{sup.name}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-2 text-right space-x-1 whitespace-nowrap">
+                            <button
+                              onClick={handleSaveEdit}
+                              className="text-green-600 hover:text-green-800 p-1"
+                              title="Save"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="text-gray-400 hover:text-gray-600 p-1"
+                              title="Cancel"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate max-w-[150px]">{emp.name}</span>
+                              {emp.hasDirectReports && (
+                                <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  Supervisor
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            <span className="truncate block max-w-[200px]">{emp.email}</span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">{emp.department}</td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            <span className="truncate block max-w-[150px]">{emp.title}</span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {getSupervisorName(emp.supervisorId) || '—'}
+                          </td>
+                          <td className="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+                            <button
+                              onClick={() => handleStartEdit(emp)}
+                              className="text-gray-400 hover:text-blue-600 p-1"
+                              title="Edit"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(emp.id)}
+                              className="text-gray-400 hover:text-red-600 p-1"
+                              title="Delete"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
       {/* Navigation */}
-      <div className="mt-6 flex justify-between">
+      <div className="mt-6 flex flex-col sm:flex-row justify-between gap-3">
         <button
           type="button"
           onClick={handleBack}
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+          className="w-full sm:w-auto px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
         >
           ← Back
         </button>
@@ -767,7 +955,7 @@ export default function SetupStep3Page() {
           type="button"
           onClick={handleNext}
           disabled={employees.length === 0}
-          className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Next: Check-In Settings →
         </button>

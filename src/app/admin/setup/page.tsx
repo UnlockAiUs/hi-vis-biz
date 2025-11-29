@@ -12,6 +12,7 @@
  * - Organization name input
  * - Timezone selection
  * - Organization size band selection
+ * - Responsive mobile-friendly design
  * 
  * STATE: Saves to localStorage via onboarding-wizard utilities
  * NEXT: /admin/setup/departments (Step 2)
@@ -144,29 +145,29 @@ export default function SetupStep1Page() {
   }
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="max-w-xl mx-auto px-4 sm:px-0">
       {/* Step Header */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
           Company Basics
         </h2>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-sm sm:text-base text-gray-600">
           Step 1 of 4: Tell us about your organization
         </p>
       </div>
 
       {/* Form */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white shadow rounded-lg p-4 sm:p-6">
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
             {error}
           </div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Organization Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
               Organization Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -174,7 +175,7 @@ export default function SetupStep1Page() {
               id="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base"
               placeholder="Acme Corporation"
               required
             />
@@ -185,14 +186,14 @@ export default function SetupStep1Page() {
 
           {/* Timezone */}
           <div>
-            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1">
               Timezone <span className="text-red-500">*</span>
             </label>
             <select
               id="timezone"
               value={formData.timezone}
               onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base"
             >
               {TIMEZONES.map((tz) => (
                 <option key={tz.value} value={tz.value}>
@@ -207,14 +208,14 @@ export default function SetupStep1Page() {
 
           {/* Organization Size */}
           <div>
-            <label htmlFor="sizeBand" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="sizeBand" className="block text-sm font-medium text-gray-700 mb-1">
               Team Size <span className="text-red-500">*</span>
             </label>
             <select
               id="sizeBand"
               value={formData.sizeBand}
               onChange={(e) => setFormData({ ...formData, sizeBand: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base"
             >
               {SIZE_BANDS.map((band) => (
                 <option key={band.value} value={band.value}>
@@ -229,14 +230,14 @@ export default function SetupStep1Page() {
 
           {/* Industry */}
           <div>
-            <label htmlFor="industry" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
               Industry <span className="text-red-500">*</span>
             </label>
             <select
               id="industry"
               value={formData.industry}
               onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base"
             >
               <option value="">Select your industry</option>
               {INDUSTRIES.map((ind) => (
@@ -256,7 +257,7 @@ export default function SetupStep1Page() {
           <button
             type="button"
             onClick={handleNext}
-            className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+            className="w-full sm:w-auto px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
           >
             Next: Add Departments →
           </button>

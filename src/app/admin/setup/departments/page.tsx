@@ -12,6 +12,7 @@
  * - Add/edit/delete departments
  * - Duplicate name validation
  * - Inline editing mode
+ * - Responsive mobile-friendly design
  * 
  * STATE: Saves to localStorage via onboarding-wizard utilities
  * PREV: /admin/setup (Step 1) | NEXT: /admin/setup/people (Step 3)
@@ -180,19 +181,19 @@ export default function SetupStep2Page() {
   }
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="max-w-xl mx-auto px-4 sm:px-0">
       {/* Step Header */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
           Departments & Roles
         </h2>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-sm sm:text-base text-gray-600">
           Step 2 of 4: Add your organization&apos;s departments
         </p>
       </div>
 
       {/* Form */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white shadow rounded-lg p-4 sm:p-6">
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
             {error}
@@ -204,20 +205,20 @@ export default function SetupStep2Page() {
           <label htmlFor="deptName" className="block text-sm font-medium text-gray-700 mb-1">
             Add Department
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               id="deptName"
               value={newDeptName}
               onChange={(e) => setNewDeptName(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleAddDepartment()}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base"
               placeholder="e.g. Engineering, Sales, Marketing"
             />
             <button
               type="button"
               onClick={handleAddDepartment}
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+              className="w-full sm:w-auto px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
             >
               Add
             </button>
@@ -243,9 +244,9 @@ export default function SetupStep2Page() {
               </p>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg">
+            <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden">
               {departments.map((dept) => (
-                <li key={dept.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+                <li key={dept.id} className="flex items-center justify-between px-4 py-4 hover:bg-gray-50 bg-white">
                   {editingId === dept.id ? (
                     <div className="flex-1 flex items-center gap-2">
                       <input
@@ -253,47 +254,47 @@ export default function SetupStep2Page() {
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                        className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                         autoFocus
                       />
                       <button
                         onClick={handleSaveEdit}
-                        className="text-green-600 hover:text-green-800 p-1"
+                        className="text-green-600 hover:text-green-800 p-2"
                         title="Save"
                       >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className="text-gray-400 hover:text-gray-600 p-1"
+                        className="text-gray-400 hover:text-gray-600 p-2"
                         title="Cancel"
                       >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
                     </div>
                   ) : (
                     <>
-                      <span className="text-sm text-gray-900">{dept.name}</span>
+                      <span className="text-base text-gray-900 font-medium">{dept.name}</span>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleStartEdit(dept)}
-                          className="text-gray-400 hover:text-blue-600 p-1"
+                          className="text-gray-400 hover:text-blue-600 p-2"
                           title="Edit"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                           </svg>
                         </button>
                         <button
                           onClick={() => handleDelete(dept.id)}
-                          className="text-gray-400 hover:text-red-600 p-1"
+                          className="text-gray-400 hover:text-red-600 p-2"
                           title="Delete"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
@@ -307,11 +308,11 @@ export default function SetupStep2Page() {
         </div>
 
         {/* Navigation */}
-        <div className="mt-8 flex justify-between">
+        <div className="mt-8 flex flex-col sm:flex-row justify-between gap-3">
           <button
             type="button"
             onClick={handleBack}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+            className="w-full sm:w-auto px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
           >
             ← Back
           </button>
@@ -319,7 +320,7 @@ export default function SetupStep2Page() {
             type="button"
             onClick={handleNext}
             disabled={departments.length === 0}
-            className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next: Add People →
           </button>
