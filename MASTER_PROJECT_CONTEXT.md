@@ -184,6 +184,12 @@ Human corrections that layer on top of derived data:
 | `workflow_versions` | Versioned workflow snapshots | id, workflow_id, version_number, created_by_type, created_by_id, source_dot_ids, structure (JSONB) |
 | `audit_log` | Global change tracking | id, org_id, actor_type, actor_id, entity_type, entity_id, action, details (JSONB) |
 
+### Analytics Backbone Tables (Phase 5)
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `team_health_metrics` | Computed team health metrics per department/time window | id, org_id, department_id, time_window_start, time_window_end, participation_rate, friction_index, sentiment_score, focus_score, workload_score, burnout_risk_score, risk_level |
+| `topic_summaries` | Recurring themes by period | id, org_id, department_id, time_window_start, time_window_end, topic_key, topic_label, mention_count, sentiment_trend, summary_text |
+
 ### Override Layer Tables (Phase 2)
 | Table | Purpose | Key Columns |
 |-------|---------|-------------|
@@ -215,6 +221,7 @@ Human corrections that layer on top of derived data:
 | `src/lib/supabase/client.ts` | Browser-side Supabase client factory | createClient |
 | `src/lib/supabase/server.ts` | Server-side Supabase clients | createClient, createServiceClient |
 | `src/lib/supabase/middleware.ts` | Session refresh middleware helper | updateSession |
+| `src/lib/supabase/direct-sql.ts` | Direct SQL execution (bypasses MCP) | executeDirectSQL, executeMigration, tableExists, listTables, getTableColumns |
 
 ### Type Definitions
 
@@ -518,11 +525,12 @@ After auth success:
 
 ## COMPLETE FILE CHECKLIST (71 TypeScript/TSX + 12 SQL + 5 Test Files)
 
-### ✅ Core Infrastructure (4 files)
+### ✅ Core Infrastructure (5 files)
 - [x] `src/middleware.ts`
 - [x] `src/lib/supabase/client.ts`
 - [x] `src/lib/supabase/server.ts`
 - [x] `src/lib/supabase/middleware.ts`
+- [x] `src/lib/supabase/direct-sql.ts` - **Direct SQL execution for autonomous AI operations (bypasses MCP)**
 
 ### ✅ Types (1 file)
 - [x] `src/types/database.ts`
@@ -771,3 +779,13 @@ After auth success:
   - 11 supported languages: en, es, fr, de, pt, it, nl, pl, ja, zh, ko
   - Dual text storage: original language + English translation for analytics
   - Phase 4 COMPLETE - Multi-language support shipped
+2025-11-28 cline - Completed FEATURE_UPDATE_EXECUTION_PLAN Phase 5 (Analytics Backbone):
+  - Created supabase/migrations/018_team_health_metrics.sql (team_health_metrics, topic_summaries tables)
+  - Created src/lib/utils/team-health.ts (metric computation utilities)
+  - Created src/app/api/admin/team-health/route.ts (GET/POST metrics API)
+  - Created src/app/admin/team-health/page.tsx (Team Health Scorecard UI)
+  - Updated src/app/admin/AdminSidebar.tsx (added Team Health nav link)
+  - Metrics: participation_rate, friction_index, sentiment_score, focus_score, workload_score, burnout_risk_score
+  - Risk levels: low (0-33), medium (34-66), high (67-100)
+  - Time windows: week, month, quarter
+  - Phase 5 COMPLETE - Analytics backbone shipped
