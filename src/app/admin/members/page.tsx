@@ -103,10 +103,8 @@ export default function MembersPage() {
   const [hasCustomSchedule, setHasCustomSchedule] = useState(false)
   const [scheduleOverride, setScheduleOverride] = useState<ScheduleConfig>(DEFAULT_SCHEDULE)
 
-  // Delete confirmation state
-  const [deletingMember, setDeletingMember] = useState<MemberWithProfile | null>(null)
-  const [deleteConfirmText, setDeleteConfirmText] = useState('')
-  const [deleting, setDeleting] = useState(false)
+  // Tab state for Active/Inactive view
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active')
 
   // Role change state
   const [changingRole, setChangingRole] = useState<MemberWithProfile | null>(null)
@@ -325,37 +323,6 @@ export default function MembersPage() {
     }
   }
 
-  const confirmDelete = async () => {
-    if (!deletingMember || deleteConfirmText !== 'DeleteForever') return
-
-    setDeleting(true)
-    setError(null)
-
-    try {
-      // Use API route to bypass RLS
-      const response = await fetch('/api/admin/members', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId: deletingMember.id }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete member')
-      }
-
-      setMembers(members.filter(m => m.id !== deletingMember.id))
-      setDeletingMember(null)
-      setDeleteConfirmText('')
-      setSuccess('Member removed successfully')
-      setTimeout(() => setSuccess(null), 3000)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete member')
-    } finally {
-      setDeleting(false)
-    }
-  }
 
   const changeRole = async () => {
     if (!changingRole || !newRole) return
@@ -545,12 +512,6 @@ export default function MembersPage() {
         })
       }
 
-      items.push({
-        label: 'Delete',
-        onClick: () => setDeletingMember(member),
-        icon: ActionMenuIcons.delete,
-        variant: 'danger',
-      })
     }
 
     return items
@@ -1011,44 +972,6 @@ export default function MembersPage() {
                 className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
               >
                 {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deletingMember && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Member</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Are you sure you want to remove this member from the organization? 
-              This action cannot be undone.
-            </p>
-            <p className="text-sm text-gray-700 mb-2">
-              Type <strong className="text-red-600">DeleteForever</strong> to confirm:
-            </p>
-            <input
-              type="text"
-              value={deleteConfirmText}
-              onChange={(e) => setDeleteConfirmText(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 text-sm mb-4"
-              placeholder="DeleteForever"
-            />
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => { setDeletingMember(null); setDeleteConfirmText('') }}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                disabled={deleteConfirmText !== 'DeleteForever' || deleting}
-                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {deleting ? 'Deleting...' : 'Delete Forever'}
               </button>
             </div>
           </div>

@@ -1728,7 +1728,109 @@ Human tasks:
 
 ### Agent Handover Notes (Phase 11)
 
-(Agents fill this in after executing Phase 11.)
+**Completed: November 28, 2025**
+
+**What was implemented:**
+
+1. **Stripe Products & Prices (Created in Live Mode):**
+   - Product: `prod_TVc4x6VF2NPkLO` (VizDots Team Plan)
+   - Price: `price_1SYar2C2yoKDb4XmlvWbwXTY` ($29/month recurring)
+   - Description: "AI-powered employee check-ins for your team. Includes unlimited dots, all AI agents, workflow insights, and analytics."
+
+2. **Stripe Client Library (`src/lib/stripe/client.ts`):**
+   - Configured Stripe client with API version `2024-11-20.acacia`
+   - Exports `stripe` client, `STRIPE_PRICE_ID`, `isStripeConfigured()`, `getAppUrl()`
+   - Uses environment variables for secrets
+
+3. **Checkout Session API (`src/app/api/billing/create-checkout-session/route.ts`):**
+   - POST endpoint for authenticated owner/admin users
+   - Creates or retrieves Stripe customer (saves `stripe_customer_id` to org)
+   - Creates subscription checkout session with VizDots Team Plan
+   - Success URL: `/admin/billing?session_id={CHECKOUT_SESSION_ID}&success=true`
+   - Cancel URL: `/admin/billing?canceled=true`
+   - Metadata includes `org_id` for webhook processing
+
+4. **Billing Portal API (`src/app/api/billing/portal/route.ts`):**
+   - POST endpoint for authenticated owner/admin users
+   - Creates Stripe customer portal session for subscription management
+   - Requires existing `stripe_customer_id` on organization
+
+5. **Webhook Handler (`src/app/api/billing/webhook/route.ts`):**
+   - Validates Stripe signature with `STRIPE_WEBHOOK_SECRET`
+   - Handles events:
+     - `checkout.session.completed` → Updates org with subscription info
+     - `customer.subscription.created/updated` → Updates subscription status
+     - `customer.subscription.deleted` → Sets status to 'canceled'
+     - `invoice.payment_failed` → Sets status to 'past_due'
+     - `invoice.payment_succeeded` → Restores 'active' status if was past_due
+   - Maps Stripe statuses to our enum: `active | past_due | canceled | trialing | expired`
+   - Uses service role key for direct DB updates (bypasses RLS)
+
+6. **Billing Page UI (`src/app/admin/billing/page.tsx`):**
+   - Shows current subscription status with color-coded badges
+   - Trial info: days remaining, start date, end date
+   - Success/cancel alerts from Stripe redirect
+   - Past due warning with CTA to manage billing
+   - "Start Paid Plan" button for trial users (calls checkout session API)
+   - "Manage Billing" button for subscribed users (calls portal API)
+   - What's Included section ($29/month with feature list)
+   - FAQ section
+
+7. **Billing Actions Component (`src/app/admin/billing/BillingActions.tsx`):**
+   - Client component for button interactions
+   - `StartPlanButton` - Creates checkout session and redirects
+   - `ManageBillingButton` - Opens Stripe customer portal
+   - Loading states and error handling
+
+8. **Package.json Updated:**
+   - Added `stripe@^17.0.0` dependency
+
+9. **Environment Variables (`.env.example`):**
+   - `STRIPE_SECRET_KEY` - Stripe secret key (live or test)
+   - `STRIPE_PRICE_ID` - Default: `price_1SYar2C2yoKDb4XmlvWbwXTY`
+   - `STRIPE_WEBHOOK_SECRET` - Webhook signing secret
+
+**Human Tasks Required (🔑):**
+
+1. **Install Dependencies:** Run `npm install` to install Stripe package
+2. **Set Environment Variables in Vercel:**
+   - `STRIPE_SECRET_KEY` (from Stripe dashboard)
+   - `STRIPE_PRICE_ID` (already created: `price_1SYar2C2yoKDb4XmlvWbwXTY`)
+   - `STRIPE_WEBHOOK_SECRET` (from Stripe webhook configuration)
+3. **Create Stripe Webhook:**
+   - Go to Stripe Dashboard → Developers → Webhooks
+   - Add endpoint: `https://your-domain.com/api/billing/webhook`
+   - Select events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.payment_succeeded`
+   - Copy webhook signing secret to `STRIPE_WEBHOOK_SECRET`
+4. **Configure Customer Portal:**
+   - Go to Stripe Dashboard → Settings → Billing → Customer portal
+   - Enable portal and configure allowed actions
+
+**Testing Checklist:**
+
+- [ ] Owner clicks "Start Paid Plan" → Redirected to Stripe Checkout
+- [ ] Complete test payment → Redirected back with success message
+- [ ] Organization `subscription_status` updated to 'active'
+- [ ] "Manage Billing" button opens Stripe customer portal
+- [ ] Cancel subscription in portal → Webhook updates status to 'canceled'
+- [ ] Failed payment → Status changes to 'past_due' with warning banner
+
+**Files Created:**
+- `src/lib/stripe/client.ts`
+- `src/app/api/billing/create-checkout-session/route.ts`
+- `src/app/api/billing/portal/route.ts`
+- `src/app/api/billing/webhook/route.ts`
+- `src/app/admin/billing/BillingActions.tsx`
+
+**Files Modified:**
+- `package.json` (added stripe dependency)
+- `src/app/admin/billing/page.tsx` (complete rewrite with Stripe integration)
+- `.env.example` (added Stripe variables)
+
+**Important Notes:**
+- Stripe is configured in LIVE mode (not test mode) - the product and price IDs are real
+- For testing, consider switching to test mode keys temporarily
+- The webhook handler is idempotent - multiple deliveries of the same event are safe
 
 ---
 

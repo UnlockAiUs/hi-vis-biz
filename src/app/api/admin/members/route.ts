@@ -5,110 +5,33 @@
  * ╚═══════════════════════════════════════════════════════════════════════════════╝
  * 
  * FILE: src/app/api/admin/members/route.ts
- * PURPOSE: API endpoints for managing organization members (delete, update role)
- * EXPORTS: DELETE, PATCH handlers
+ * PURPOSE: API endpoints for managing organization members (update role, status)
+ * EXPORTS: DELETE (disabled), PATCH handlers
  * 
  * KEY LOGIC:
- * - DELETE: Remove member from org (deletes membership, profile, and auth user)
- * - PATCH: Update member role (owner/admin/member) - only owners can change roles
- * - Prevents deletion of owners without demotion first
+ * - DELETE: DISABLED - Users can never be deleted, only deactivated
+ * - PATCH: Update member role (owner/admin/member) or status (active/inactive)
+ * - Only owners can change roles
  * - Ensures at least one owner always exists
  * - Uses service client to bypass RLS for admin operations
+ * 
+ * IMPORTANT: Users are NEVER deleted. They can only be deactivated.
+ * This preserves all historical data for analytics and compliance.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 
-// DELETE /api/admin/members - Delete a member
-export async function DELETE(request: NextRequest) {
-  try {
-    const { memberId } = await request.json()
-
-    if (!memberId) {
-      return NextResponse.json({ error: 'Member ID is required' }, { status: 400 })
-    }
-
-    // Verify current user is admin/owner
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-
-    // Check user's membership
-    const { data: currentUserMembership } = await supabase
-      .from('organization_members')
-      .select('org_id, role')
-      .eq('user_id', user.id)
-      .in('role', ['owner', 'admin'])
-      .single()
-
-    if (!currentUserMembership) {
-      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
-    }
-
-    // Use service client for all operations (bypasses RLS)
-    const serviceClient = await createServiceClient()
-
-    // Get the member to delete
-    const { data: memberToDelete } = await serviceClient
-      .from('organization_members')
-      .select('org_id, role, user_id')
-      .eq('id', memberId)
-      .single()
-
-    if (!memberToDelete) {
-      return NextResponse.json({ error: 'Member not found' }, { status: 404 })
-    }
-
-    // Verify member is in same org
-    if (memberToDelete.org_id !== currentUserMembership.org_id) {
-      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
-    }
-
-    // Can't delete owner - they must be demoted first
-    if (memberToDelete.role === 'owner') {
-      return NextResponse.json({ error: 'Cannot delete an owner. Demote them first.' }, { status: 400 })
-    }
-
-    // Delete user profile first (if exists)
-    await serviceClient
-      .from('user_profiles')
-      .delete()
-      .eq('user_id', memberToDelete.user_id)
-
-    // Delete the organization membership
-    const { error: deleteError } = await serviceClient
-      .from('organization_members')
-      .delete()
-      .eq('id', memberId)
-
-    if (deleteError) {
-      console.error('Delete membership error:', deleteError)
-      return NextResponse.json({ error: deleteError.message }, { status: 500 })
-    }
-
-    // Also delete the user from Supabase Auth
-    const { error: authDeleteError } = await serviceClient.auth.admin.deleteUser(
-      memberToDelete.user_id
-    )
-
-    if (authDeleteError) {
-      console.error('Delete auth user error:', authDeleteError)
-      // Don't fail the request - the membership is already deleted
-      // The orphaned auth user can be cleaned up later
-    }
-
-    return NextResponse.json({ success: true })
-
-  } catch (error) {
-    console.error('Delete member error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    )
-  }
+// DELETE /api/admin/members - DISABLED
+// Users can NEVER be deleted. They can only be deactivated.
+// This preserves all historical data for analytics and compliance.
+export async function DELETE() {
+  return NextResponse.json(
+    { 
+      error: 'User deletion is not allowed. Users can only be deactivated to preserve historical data. Use PATCH to change status to "inactive".' 
+    }, 
+    { status: 405 }
+  )
 }
 
 // PATCH /api/admin/members - Update member role

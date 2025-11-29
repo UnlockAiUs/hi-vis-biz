@@ -22,7 +22,8 @@
     "openai": "^4.67.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "recharts": "^2.12.0"
+    "recharts": "^2.12.0",
+    "stripe": "^17.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
