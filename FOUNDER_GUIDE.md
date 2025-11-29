@@ -15,8 +15,13 @@
 7. [Early Warning Signals](#early-warning-signals)
 8. [AI Test Lab](#ai-test-lab)
 9. [Trial & Subscription](#trial--subscription)
-10. [Manual Test Script](#manual-test-script)
-11. [Troubleshooting](#troubleshooting)
+10. [Workflow Feedback & Overrides](#workflow-feedback--overrides)
+11. [Team Health Scorecard](#team-health-scorecard)
+12. [Pattern Alerts & Coaching](#pattern-alerts--coaching)
+13. [Multi-Language Support](#multi-language-support)
+14. [Privacy Settings](#privacy-settings)
+15. [Manual Test Script](#manual-test-script)
+16. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -160,6 +165,61 @@ Workflows are marked as "Beta" - they improve as more dots are collected.
 
 ---
 
+## Workflow Feedback & Overrides
+
+### What Is It?
+As an admin/owner, you can provide feedback on AI-detected workflows and make corrections. This helps VizDots learn and improves accuracy over time.
+
+### Accessing Workflow Details
+1. Go to **Admin → Workflows**
+2. Click on any workflow to see details
+3. View the workflow steps, tools, and version history
+
+### Providing Accuracy Feedback
+On each workflow detail page, you'll see feedback buttons:
+
+| Button | When to Use |
+|--------|------------|
+| **✅ Accurate** | AI got it right |
+| **🤔 Partial** | Mostly correct, some issues |
+| **❌ Incorrect** | Needs significant changes |
+
+When you select "Partial" or "Incorrect", you can specify:
+- Missing steps
+- Wrong steps
+- Incorrect tools
+- Free-text explanation
+
+### Adding Owner Notes
+Add notes to workflows to provide context:
+
+1. Find the **"Add Note"** section
+2. Select note type:
+   - **Policy** - Official guidance
+   - **Clarification** - Explain nuances
+   - **Question** - Flag for team discussion
+   - **Alert** - Important warning
+3. Choose visibility (Admins only, Managers, Everyone)
+4. Save the note
+
+### Marking Workflow Variants
+When VizDots detects different ways people do the same process:
+
+1. View "Variants" section on workflow detail
+2. Each variant shows how it differs from the main process
+3. Toggle **"OK"** for acceptable variations
+4. Toggle **"Friction"** for variations causing problems
+
+Friction variants are tracked in metrics and may trigger alerts.
+
+### Reset to AI Suggestion
+If you want to undo your changes:
+1. Find the **"Reset to AI Suggestion"** button
+2. Confirm the reset
+3. Workflow reverts to pure AI interpretation
+
+---
+
 ## Early Warning Signals
 
 ### What Are They?
@@ -177,6 +237,154 @@ VizDots automatically detects potential issues by:
 ### What to Do
 - High friction mentions → Talk to that team
 - Participation drop → Check if employees received invites
+
+---
+
+## Team Health Scorecard
+
+### What Is It?
+A dashboard showing the health of each department/team based on check-in data.
+
+### Accessing Team Health
+Go to **Admin → Team Health** (heart icon in sidebar)
+
+### Understanding Metrics
+
+| Metric | What It Measures | Good Range |
+|--------|-----------------|------------|
+| **Participation Rate** | % of employees completing check-ins | >70% |
+| **Friction Index** | Amount of reported blockers/issues | <30% |
+| **Sentiment Score** | Overall mood from check-ins | >60 |
+| **Focus Score** | Priority clarity | >60 |
+| **Workload Score** | Work distribution balance | 40-70 |
+| **Burnout Risk** | Signs of overwork/stress | <40 |
+
+### Risk Levels
+Each department shows a risk badge:
+- 🟢 **Low** (0-33): Healthy team
+- 🟡 **Medium** (34-66): Watch closely
+- 🔴 **High** (67-100): Action needed
+
+### Time Windows
+Use the selector to view metrics for:
+- **Week** - Last 7 days
+- **Month** - Last 30 days
+- **Quarter** - Last 90 days
+
+---
+
+## Pattern Alerts & Coaching
+
+### What Are Alerts?
+VizDots automatically creates alerts when metrics cross concerning thresholds.
+
+### Accessing Alerts
+Go to **Admin → Alerts** (bell icon in sidebar)
+
+### Alert Types
+
+| Alert Type | Trigger |
+|-----------|---------|
+| **Low Participation** | <50% check-in rate |
+| **High Friction** | >40% friction index |
+| **Sentiment Drop** | Rapid mood decline |
+| **Workload Spike** | Sudden workload increase |
+| **Burnout Risk** | High burnout indicators |
+| **Focus Drift** | Unclear priorities |
+| **Process Variance** | Many workflow deviations |
+
+### Alert Severity
+- **Info** (blue) - FYI, no immediate action needed
+- **Warning** (yellow) - Should address soon
+- **Critical** (red) - Needs immediate attention
+
+### Coaching Suggestions
+Each alert includes **actionable suggestions**:
+- Specific steps you can take
+- Why it matters
+- Rough effort level
+
+Example for "Low Participation":
+> - Schedule brief 1:1 check-ins with team members who haven't responded
+> - Consider adjusting check-in timing to better fit team schedules
+
+### Managing Alerts
+Use the action buttons on each alert:
+
+| Action | Purpose |
+|--------|---------|
+| **Acknowledge** | "I've seen this" |
+| **Resolve** | "I've addressed this" (add a note) |
+| **Dismiss** | "Not relevant" |
+
+---
+
+## Multi-Language Support
+
+### What Is It?
+Employees can complete check-ins in their preferred language. VizDots translates responses for analytics while preserving original text.
+
+### Supported Languages
+- English (en)
+- Spanish (es)
+- French (fr)
+- German (de)
+- Portuguese (pt)
+- Italian (it)
+- Dutch (nl)
+- Polish (pl)
+- Japanese (ja)
+- Chinese (zh)
+- Korean (ko)
+
+### Employee Language Settings
+Employees can set their preference:
+1. **Dashboard → Settings**
+2. Select preferred language
+3. Save
+
+### How It Works
+1. Employee responds in their language
+2. AI converses in that language
+3. Response is stored with both original and English translation
+4. Analytics always use English translation for consistency
+
+---
+
+## Privacy Settings
+
+### What Is It?
+Controls for how employee data is collected, stored, and used. Helps with GDPR compliance and employee trust.
+
+### Accessing Privacy Settings
+Go to **Admin → Privacy** (shield icon in sidebar)
+
+### Available Controls
+
+| Setting | Description |
+|---------|-------------|
+| **Allow Translation** | Enable/disable automatic translation |
+| **Allow Sentiment Analysis** | Enable/disable mood analysis |
+| **Data Retention Days** | How long to keep data (blank = forever) |
+| **Employee Can Mark Private** | Let employees mark specific responses as private |
+| **Privacy Notice** | Custom message shown to employees |
+
+### Privacy Notice
+If enabled, employees see a notice explaining:
+- What data is collected
+- How it's used
+- Their rights
+
+### Data Export (GDPR)
+Employees can request a copy of their data. This feature supports:
+- Data portability requirements
+- Right to access requests
+
+### Best Practices
+1. Enable privacy notice for transparency
+2. Set reasonable retention periods
+3. Be consistent with your privacy policy
+4. Train managers on data handling
 
 ---
 
@@ -337,4 +545,4 @@ For help, contact: **support@vizdots.com**
 
 ---
 
-*Last updated: November 27, 2025*
+*Last updated: November 28, 2025*
