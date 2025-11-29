@@ -13,7 +13,7 @@ last_updated: 2025-11-28
 last_agent: cline
 purpose: SINGLE SOURCE OF TRUTH for all AI agents working on this project
 format: optimized for AI token efficiency
-documentation_status: COMPLETE - all 79 code files + 14 SQL migrations documented
+documentation_status: COMPLETE - all 79 code files + 15 SQL migrations documented
 execution_plan_status: ALL 12 PHASES COMPLETE - PRODUCTION READY
 rebrand_status: COMPLETE - rebranded from Hi-Vis Biz to VizDots
 test_framework: COMPLETE - Vitest (unit) + Playwright (E2E)
@@ -118,7 +118,7 @@ VizDots Terminology:
 │   │   ├── supabase/           # Supabase clients
 │   │   └── utils/              # Utility functions
 │   └── types/                  # TypeScript types
-├── supabase/migrations/        # Database migrations (001-014)
+├── supabase/migrations/        # Database migrations (001-015)
 ├── tests/                      # Test files
 │   ├── setup.ts                # Test configuration
 │   ├── unit/                   # Vitest unit tests
@@ -183,6 +183,12 @@ Human corrections that layer on top of derived data:
 | `workflows` | Stable workflow identifiers | id, org_id, workflow_key, display_name, department_id, status |
 | `workflow_versions` | Versioned workflow snapshots | id, workflow_id, version_number, created_by_type, created_by_id, source_dot_ids, structure (JSONB) |
 | `audit_log` | Global change tracking | id, org_id, actor_type, actor_id, entity_type, entity_id, action, details (JSONB) |
+
+### Override Layer Tables (Phase 2)
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `workflow_overrides` | Owner/admin corrections to AI workflows | id, workflow_id, created_by_user_id, status, override_reason, override_payload (JSONB), accuracy_rating, accuracy_feedback (JSONB) |
+| `owner_notes` | Contextual notes from owners/admins | id, org_id, workflow_id, department_id, author_user_id, note_type, note_text, visible_to, is_active |
 
 ### Sessions Table Constraints
 - **Idempotence Constraint (012):** Unique partial index on `(user_id, agent_code, scheduled_for::date)` WHERE `completed_at IS NULL`
@@ -395,6 +401,7 @@ Human corrections that layer on top of derived data:
 | `012_scheduler_idempotence.sql` | **Unique constraint for scheduler idempotence** - prevents duplicate sessions |
 | `013_email_logs.sql` | **Phase 10: email tracking/idempotence** |
 | `014_truth_layers.sql` | **Phase 1 Feature Update: workflows, workflow_versions, audit_log, fact immutability** |
+| `015_overrides_owner_notes.sql` | **Phase 2 Feature Update: workflow_overrides, owner_notes, audit trigger** |
 
 ---
 
@@ -623,6 +630,7 @@ After auth success:
 - [x] `supabase/migrations/012_scheduler_idempotence.sql` - **scheduler idempotence constraint**
 - [x] `supabase/migrations/013_email_logs.sql` - **Phase 10: email tracking/idempotence**
 - [x] `supabase/migrations/014_truth_layers.sql` - **Phase 1 Feature Update: workflow versioning, audit_log, fact immutability**
+- [x] `supabase/migrations/015_overrides_owner_notes.sql` - **Phase 2 Feature Update: workflow_overrides, owner_notes**
 
 ### ✅ Test Files (5 files)
 - [x] `vitest.config.ts`
@@ -717,3 +725,9 @@ After auth success:
   - Added audit_log table for global change tracking
   - Added fact immutability trigger on answers table
   - Documented Data Truth Layers architecture in MASTER_PROJECT_CONTEXT.md
+2025-11-28 cline - Completed FEATURE_UPDATE_EXECUTION_PLAN Phase 2 (DB layer):
+  - Created supabase/migrations/015_overrides_owner_notes.sql
+  - Added workflow_overrides table for owner corrections to AI workflows
+  - Added owner_notes table for contextual notes
+  - Added audit trigger for override changes
+  - All tables have RLS policies and indexes

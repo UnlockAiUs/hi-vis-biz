@@ -9,33 +9,42 @@
  * EXPORTS: default WorkflowsPage (server component)
  * 
  * LOGIC:
- * - Extracts workflows from workflow_mapper agent outputs
- * - Groups workflows by department/role
- * - Shows workflow steps and tools used
- * - Labels as "Beta" to set expectations
+ * - Fetches workflows from workflows table (Phase 1 architecture)
+ * - Gets latest version for each workflow
+ * - Groups workflows by department
+ * - Links to detail view with feedback controls
  * 
  * DEPENDENCIES: @/lib/supabase/server
- * TABLES: answers, organization_members, departments
+ * TABLES: workflows, workflow_versions, workflow_overrides, departments
  */
 
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
-interface WorkflowOutput {
-  workflow_name: string
-  display_label?: string
-  steps: string[]
-  tools: string[]
+interface WorkflowStructure {
+  steps?: string[]
+  tools?: string[]
   data_sources?: string[]
+  roles_involved?: string[]
+  estimated_duration?: string
+  frequency?: string
 }
 
-interface WorkflowWithMeta {
+interface WorkflowWithVersion {
   id: string
-  workflow: WorkflowOutput
-  department: string
-  role: string
-  createdAt: string
+  workflow_key: string
+  display_name: string
+  status: string
+  department_id: string | null
+  department: { name: string } | null
+  created_at: string
+  latest_version: {
+    version_number: number
+    structure: WorkflowStructure
+    created_by_type: string
+  } | null
+  has_override: boolean
 }
 
 export default async function WorkflowsPage() {
@@ -62,95 +71,79 @@ export default async function WorkflowsPage() {
 
   const orgId = membership.org_id
 
-  // Get all workflow_mapper outputs
-  const { data: workflowAnswers } = await supabase
-    .from('answers')
+  // Get all workflows with their departments
+  const { data: workflowsData } = await supabase
+    .from('workflows')
     .select(`
       id,
-      structured_output,
+      workflow_key,
+      display_name,
+      status,
+      department_id,
       created_at,
-      session:sessions(
-        user_id,
-        agent_code
-      )
+      department:departments(name)
     `)
     .eq('org_id', orgId)
-    .not('structured_output', 'is', null)
-    .order('created_at', { ascending: false })
+    .eq('status', 'active')
+    .order('display_name')
 
-  // Get members with their departments
-  const { data: members } = await supabase
-    .from('organization_members')
-    .select('user_id, display_name, job_title, department:departments(name)')
-    .eq('org_id', orgId)
+  // Get latest version for each workflow
+  const workflowIds = workflowsData?.map(w => w.id) || []
+  
+  const { data: versionsData } = await supabase
+    .from('workflow_versions')
+    .select('workflow_id, version_number, structure, created_by_type')
+    .in('workflow_id', workflowIds)
+    .order('version_number', { ascending: false })
 
-  // Get departments
-  const { data: departments } = await supabase
-    .from('departments')
-    .select('id, name')
-    .eq('org_id', orgId)
+  // Get active overrides
+  const { data: overridesData } = await supabase
+    .from('workflow_overrides')
+    .select('workflow_id')
+    .in('workflow_id', workflowIds)
+    .eq('status', 'active')
 
-  // Create member lookup
-  const memberLookup: Record<string, { name: string; title: string; department: string }> = {}
-  members?.forEach(m => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const deptRaw = m.department as any
-    const deptName = Array.isArray(deptRaw) ? deptRaw[0]?.name : deptRaw?.name
-    memberLookup[m.user_id] = {
-      name: m.display_name || 'Unknown',
-      title: m.job_title || 'Team Member',
-      department: deptName || 'General'
+  // Create lookup maps
+  const latestVersions: Record<string, { version_number: number; structure: WorkflowStructure; created_by_type: string }> = {}
+  versionsData?.forEach(v => {
+    if (!latestVersions[v.workflow_id]) {
+      latestVersions[v.workflow_id] = {
+        version_number: v.version_number,
+        structure: v.structure as WorkflowStructure,
+        created_by_type: v.created_by_type
+      }
     }
   })
 
-  // Extract workflows from answers
-  const workflows: WorkflowWithMeta[] = []
-  const seenWorkflows = new Set<string>()
+  const workflowsWithOverrides = new Set(overridesData?.map(o => o.workflow_id) || [])
 
-  workflowAnswers?.forEach(answer => {
-    const output = answer.structured_output as Record<string, unknown>
-    if (!output) return
-
-    // Check if this is a workflow_mapper output
-    if (output.workflow_name && output.steps && Array.isArray(output.steps)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sessionRaw = answer.session as any
-      const session = Array.isArray(sessionRaw) ? sessionRaw[0] : sessionRaw
-      if (!session || session.agent_code !== 'workflow_mapper') return
-
-      const workflowKey = `${output.workflow_name}-${session.user_id}`
-      if (seenWorkflows.has(workflowKey)) return
-      seenWorkflows.add(workflowKey)
-
-      const memberInfo = memberLookup[session.user_id] || { 
-        name: 'Unknown', 
-        title: 'Team Member', 
-        department: 'General' 
-      }
-
-      workflows.push({
-        id: answer.id,
-        workflow: {
-          workflow_name: output.workflow_name as string,
-          display_label: (output.display_label as string) || (output.workflow_name as string),
-          steps: output.steps as string[],
-          tools: (output.tools as string[]) || [],
-          data_sources: (output.data_sources as string[]) || []
-        },
-        department: memberInfo.department,
-        role: memberInfo.title,
-        createdAt: answer.created_at
-      })
+  // Build workflows with versions
+  const workflows: WorkflowWithVersion[] = (workflowsData || []).map(w => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const deptRaw = w.department as any
+    const deptName = Array.isArray(deptRaw) ? deptRaw[0]?.name : deptRaw?.name
+    
+    return {
+      id: w.id,
+      workflow_key: w.workflow_key,
+      display_name: w.display_name,
+      status: w.status,
+      department_id: w.department_id,
+      department: deptName ? { name: deptName } : null,
+      created_at: w.created_at,
+      latest_version: latestVersions[w.id] || null,
+      has_override: workflowsWithOverrides.has(w.id)
     }
   })
 
   // Group workflows by department
-  const workflowsByDepartment: Record<string, WorkflowWithMeta[]> = {}
+  const workflowsByDepartment: Record<string, WorkflowWithVersion[]> = {}
   workflows.forEach(w => {
-    if (!workflowsByDepartment[w.department]) {
-      workflowsByDepartment[w.department] = []
+    const deptName = w.department?.name || 'General'
+    if (!workflowsByDepartment[deptName]) {
+      workflowsByDepartment[deptName] = []
     }
-    workflowsByDepartment[w.department].push(w)
+    workflowsByDepartment[deptName].push(w)
   })
 
   return (
@@ -171,7 +164,7 @@ export default async function WorkflowsPage() {
 
       {workflows.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-          <svg className="w-16 h-16 mx-auto text-gray-300 mb-4\" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
           </svg>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Workflows Detected Yet</h3>
@@ -201,67 +194,93 @@ export default async function WorkflowsPage() {
               </h2>
               
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {deptWorkflows.map((wf) => (
-                  <div 
-                    key={wf.id}
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-medium text-gray-900">
-                        {wf.workflow.display_label || wf.workflow.workflow_name}
-                      </h3>
-                      <span className="text-xs text-gray-400">
-                        {wf.role}
-                      </span>
-                    </div>
-                    
-                    {/* Steps */}
-                    <div className="mb-4">
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                        Steps
-                      </div>
-                      <ol className="space-y-1">
-                        {wf.workflow.steps.slice(0, 5).map((step, idx) => (
-                          <li key={idx} className="flex items-start text-sm text-gray-600">
-                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs mr-2">
-                              {idx + 1}
-                            </span>
-                            <span className="line-clamp-1">{step}</span>
-                          </li>
-                        ))}
-                        {wf.workflow.steps.length > 5 && (
-                          <li className="text-xs text-gray-400 ml-7">
-                            +{wf.workflow.steps.length - 5} more steps
-                          </li>
-                        )}
-                      </ol>
-                    </div>
-                    
-                    {/* Tools */}
-                    {wf.workflow.tools.length > 0 && (
-                      <div>
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                          Tools Used
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {wf.workflow.tools.slice(0, 4).map((tool, idx) => (
-                            <span 
-                              key={idx}
-                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700"
-                            >
-                              {tool}
-                            </span>
-                          ))}
-                          {wf.workflow.tools.length > 4 && (
-                            <span className="text-xs text-gray-400">
-                              +{wf.workflow.tools.length - 4} more
+                {deptWorkflows.map((wf) => {
+                  const structure = wf.latest_version?.structure || {}
+                  const steps = structure.steps || []
+                  const tools = structure.tools || []
+                  
+                  return (
+                    <Link 
+                      key={wf.id}
+                      href={`/admin/workflows/${wf.id}`}
+                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-blue-300 transition-all block"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="font-medium text-gray-900">
+                          {wf.display_name}
+                        </h3>
+                        <div className="flex items-center gap-1">
+                          {wf.has_override && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                              Override
                             </span>
                           )}
+                          <span className="text-xs text-gray-400">
+                            v{wf.latest_version?.version_number || 1}
+                          </span>
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      
+                      {/* Steps */}
+                      <div className="mb-4">
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                          Steps
+                        </div>
+                        {steps.length > 0 ? (
+                          <ol className="space-y-1">
+                            {steps.slice(0, 5).map((step, idx) => (
+                              <li key={idx} className="flex items-start text-sm text-gray-600">
+                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs mr-2">
+                                  {idx + 1}
+                                </span>
+                                <span className="line-clamp-1">{step}</span>
+                              </li>
+                            ))}
+                            {steps.length > 5 && (
+                              <li className="text-xs text-gray-400 ml-7">
+                                +{steps.length - 5} more steps
+                              </li>
+                            )}
+                          </ol>
+                        ) : (
+                          <p className="text-sm text-gray-400 italic">No steps defined</p>
+                        )}
+                      </div>
+                      
+                      {/* Tools */}
+                      {tools.length > 0 && (
+                        <div>
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                            Tools Used
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {tools.slice(0, 4).map((tool, idx) => (
+                              <span 
+                                key={idx}
+                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700"
+                              >
+                                {tool}
+                              </span>
+                            ))}
+                            {tools.length > 4 && (
+                              <span className="text-xs text-gray-400">
+                                +{tools.length - 4} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Click hint */}
+                      <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-blue-600 flex items-center">
+                        View details & provide feedback
+                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </Link>
+                  )
+                })}
               </div>
             </div>
           ))}
