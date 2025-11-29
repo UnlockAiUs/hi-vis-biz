@@ -13,7 +13,7 @@ last_updated: 2025-11-28
 last_agent: cline
 purpose: SINGLE SOURCE OF TRUTH for all AI agents working on this project
 format: optimized for AI token efficiency
-documentation_status: COMPLETE - all 79 code files + 15 SQL migrations documented
+documentation_status: COMPLETE - all 100 code files + 20 SQL migrations documented
 execution_plan_status: ALL 12 PHASES COMPLETE - PRODUCTION READY
 rebrand_status: COMPLETE - rebranded from Hi-Vis Biz to VizDots
 test_framework: COMPLETE - Vitest (unit) + Playwright (E2E)
@@ -271,7 +271,7 @@ Human corrections that layer on top of derived data:
 
 | File | Purpose | Exports |
 |------|---------|---------|
-| `src/components/auth/HashHandler.tsx` | URL hash auth token handler (invite/recovery) | default HashHandler |
+| `src/components/auth/HashHandler.tsx` | URL hash auth token handler with smart routing | default HashHandler |
 | `src/components/ui/LoadingSpinner.tsx` | Loading spinners | LoadingSpinner, ButtonLoading |
 | `src/components/ui/Toast.tsx` | Toast notifications | ToastProvider, useToast |
 | `src/components/ui/Skeleton.tsx` | Loading placeholders | Skeleton, SkeletonCard, SkeletonTable, etc. |
@@ -520,13 +520,18 @@ const response = await agent.chat(messages, context)
 
 ### Auth Callback Smart Routing
 ```
-After auth success:
+After auth success (callback route or HashHandler):
 1. Check for invite type → handle invite flow → /auth/set-password
 2. Check for recovery type → handle password reset → /auth/set-password
 3. Check organization_members record:
    - NO record → NEW USER → /admin/setup
    - role=owner/admin → /admin
    - role=member → check profile → /dashboard or /onboarding
+
+HashHandler handles tokens in URL hash fragment (client-side):
+- Supabase email verification sends tokens in hash fragment
+- HashHandler sets session, then performs same smart routing as callback
+- This ensures new org owners go directly to /admin/setup after email verification
 ```
 
 ### Middleware Protected Routes
@@ -541,7 +546,7 @@ After auth success:
 
 ---
 
-## COMPLETE FILE CHECKLIST (71 TypeScript/TSX + 12 SQL + 5 Test Files)
+## COMPLETE FILE CHECKLIST (100 TypeScript/TSX + 20 SQL + 4 Test Files)
 
 ### ✅ Core Infrastructure (5 files)
 - [x] `src/middleware.ts`
@@ -563,7 +568,7 @@ After auth success:
 - [x] `src/lib/ai/agents/pain-scanner.ts`
 - [x] `src/lib/ai/agents/focus-tracker.ts`
 
-### ✅ Utilities (8 files)
+### ✅ Utilities (10 files)
 - [x] `src/lib/utils/profile.ts`
 - [x] `src/lib/utils/scheduler.ts`
 - [x] `src/lib/utils/onboarding-wizard.ts`
@@ -572,14 +577,17 @@ After auth success:
 - [x] `src/lib/utils/rate-limiter.ts`
 - [x] `src/lib/utils/workflow-resolver.ts` - **Phase 2: Resolves effective workflows with overrides applied**
 - [x] `src/lib/utils/translation.ts` - **Phase 4: Multi-language translation utilities (translateToEnglish, detectLanguage, processAnswerForStorage)**
+- [x] `src/lib/utils/team-health.ts` - **Phase 5: Team health metric computations (participation, friction, sentiment, focus, workload, burnout)**
+- [x] `src/lib/utils/alert-rules.ts` - **Phase 6: Pattern alert rules engine (thresholds, coaching templates, alert evaluation)**
 
-### ✅ UI Components (6 files)
+### ✅ UI Components (7 files)
 - [x] `src/components/auth/HashHandler.tsx`
 - [x] `src/components/ui/LoadingSpinner.tsx`
 - [x] `src/components/ui/Toast.tsx`
 - [x] `src/components/ui/Skeleton.tsx`
 - [x] `src/components/ui/ActionMenu.tsx`
 - [x] `src/components/ui/ErrorBoundary.tsx`
+- [x] `src/components/ui/PrivacyInfoModal.tsx` - **Phase 7: Employee-facing privacy info modal**
 
 ### ✅ Auth Pages (6 files)
 - [x] `src/app/auth/login/page.tsx` - **includes forgot password flow**
@@ -661,7 +669,7 @@ After auth success:
 - [x] `src/app/api/admin/alerts/route.ts` - **Phase 6: GET alerts list, PATCH alert status**
 - [x] `src/app/api/admin/privacy/route.ts` - **Phase 7: GET/PUT org privacy settings**
 
-### ✅ SQL Migrations (14 files)
+### ✅ SQL Migrations (20 files)
 - [x] `supabase/migrations/001_initial_schema.sql`
 - [x] `supabase/migrations/002_agents_sessions.sql`
 - [x] `supabase/migrations/003_user_profiles.sql`
@@ -677,6 +685,11 @@ After auth success:
 - [x] `supabase/migrations/013_email_logs.sql` - **Phase 10: email tracking/idempotence**
 - [x] `supabase/migrations/014_truth_layers.sql` - **Phase 1 Feature Update: workflow versioning, audit_log, fact immutability**
 - [x] `supabase/migrations/015_overrides_owner_notes.sql` - **Phase 2 Feature Update: workflow_overrides, owner_notes**
+- [x] `supabase/migrations/016_workflow_variants.sql` - **Phase 3 Feature Update: workflow_variants, workflow_variant_dot_links**
+- [x] `supabase/migrations/017_multi_language.sql` - **Phase 4 Feature Update: multi-language support, dual text storage**
+- [x] `supabase/migrations/018_team_health_metrics.sql` - **Phase 5 Feature Update: team_health_metrics, topic_summaries tables**
+- [x] `supabase/migrations/019_pattern_alerts.sql` - **Phase 6 Feature Update: pattern_alerts table with RLS policies**
+- [x] `supabase/migrations/020_privacy_controls.sql` - **Phase 7 Feature Update: privacy settings, consent tracking, data export requests**
 
 ### ✅ Test Files (6 files)
 - [x] `vitest.config.ts`
@@ -835,6 +848,11 @@ After auth success:
   - Updated src/app/admin/AdminSidebar.tsx (added Privacy nav link)
   - Privacy features: data retention settings, employee privacy controls, consent tracking, GDPR compliance hooks
   - Phase 7 COMPLETE - Privacy & trust controls shipped
+2025-11-29 cline - Fixed new org owner onboarding flow:
+  - Updated src/components/auth/HashHandler.tsx with smart routing (same logic as callback/route.ts)
+  - New owners now route directly to /admin/setup after email verification
+  - Updated src/app/auth/register/page.tsx to use NEXT_PUBLIC_APP_URL for redirect
+  - NOTE: Supabase Dashboard Site URL must be updated from hi-vis-biz.vercel.app to vizdots.com
 2025-11-28 cline - Completed FEATURE_UPDATE_EXECUTION_PLAN Phase 8 (Testing & Documentation):
   - Created tests/unit/feature-updates.test.ts (unit tests for all Feature Update phases 1-7)
   - Updated MANUAL_TEST_SCRIPT.md (added Parts 9-14 for Feature Update manual testing)

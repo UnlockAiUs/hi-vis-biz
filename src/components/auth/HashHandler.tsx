@@ -81,8 +81,47 @@ export default function HashHandler() {
               // Password recovery users also go to set-password
               router.push('/auth/set-password')
             } else {
-              // Other authenticated users go through normal routing
-              router.push('/auth/callback')
+              // SMART ROUTING for signup verification and other auth flows
+              // Check membership and route accordingly (same logic as callback/route.ts)
+              try {
+                const { data: membership } = await supabase
+                  .from('organization_members')
+                  .select('role, invite_status')
+                  .eq('user_id', data.session.user.id)
+                  .maybeSingle()
+                
+                if (!membership) {
+                  // NO MEMBERSHIP = NEW USER
+                  // They just signed up and need to create their organization
+                  console.log('HashHandler: New user - routing to /admin/setup')
+                  router.push('/admin/setup')
+                } else if (membership.role === 'owner' || membership.role === 'admin') {
+                  // Admin/Owner - send to admin dashboard
+                  console.log('HashHandler: Admin/Owner - routing to /admin')
+                  router.push('/admin')
+                } else {
+                  // Regular employee - check if they've completed onboarding
+                  const { data: profile } = await supabase
+                    .from('user_profiles')
+                    .select('profile_json')
+                    .eq('user_id', data.session.user.id)
+                    .maybeSingle()
+                  
+                  const profileComplete = profile?.profile_json?.name || profile?.profile_json?.title
+                  
+                  if (!profileComplete && membership.invite_status !== 'accepted') {
+                    console.log('HashHandler: Employee needs onboarding - routing to /onboarding')
+                    router.push('/onboarding')
+                  } else {
+                    console.log('HashHandler: Employee - routing to /dashboard')
+                    router.push('/dashboard')
+                  }
+                }
+              } catch (routingError) {
+                console.error('HashHandler: Error in smart routing:', routingError)
+                // Fallback: send to dashboard and let middleware/layout handle it
+                router.push('/dashboard')
+              }
             }
           }
         } catch (err) {

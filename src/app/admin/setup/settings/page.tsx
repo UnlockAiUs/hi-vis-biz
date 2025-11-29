@@ -147,7 +147,7 @@ export default function SetupStep4Page() {
     setError(null)
     
     try {
-      const response = await fetch('/api/admin/setup/complete', {
+      const response = await fetch('/api/aden/setup/complete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -48,11 +48,13 @@ export default function RegisterPage() {
     }
 
     const supabase = createClient()
+    // Use NEXT_PUBLIC_APP_URL if available, otherwise fall back to current origin
+    const siteUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${siteUrl}/auth/callback`,
       },
     })
 
