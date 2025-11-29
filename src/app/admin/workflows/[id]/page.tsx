@@ -252,7 +252,24 @@ export default async function WorkflowDetailPage({ params }: WorkflowDetailPageP
       <OwnerNotes 
         workflowId={id}
         orgId={orgId}
-        existingNotes={notes || []}
+        existingNotes={(notes || []).map((note: {
+          id: string
+          note_type: string
+          note_text: string
+          visible_to: string
+          is_active: boolean
+          created_at: string
+          author: { display_name: string }[] | { display_name: string } | null
+        }) => ({
+          id: note.id,
+          note_type: note.note_type,
+          note_text: note.note_text,
+          visible_to: note.visible_to,
+          is_active: note.is_active,
+          created_at: note.created_at,
+          // Supabase returns joined data as array, convert to object
+          author: Array.isArray(note.author) ? note.author[0] || null : note.author
+        }))}
       />
 
       {/* Version History */}
