@@ -24,8 +24,41 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
-export default async function AdminDashboardPage() {
+// Helper to check membership with optional retry for setup completion
+async function getMembership(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, retry = false) {
+  const { data: membership } = await supabase
+    .from('organization_members')
+    .select('org_id, role, organizations(name, subscription_status, trial_ends_at, setup_completed_at)')
+    .eq('user_id', userId)
+    .in('role', ['owner', 'admin'])
+    .single()
+  
+  // If no membership found and retry requested, wait and try once more
+  // This handles Supabase replication lag after setup completion
+  if (!membership && retry) {
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    const { data: retryMembership } = await supabase
+      .from('organization_members')
+      .select('org_id, role, organizations(name, subscription_status, trial_ends_at, setup_completed_at)')
+      .eq('user_id', userId)
+      .in('role', ['owner', 'admin'])
+      .single()
+    return retryMembership
+  }
+  
+  return membership
+}
+
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const supabase = await createClient()
+  const params = await searchParams
+  
+  // Check if coming from setup completion (need to handle potential replication lag)
+  const isFromSetup = params.setup === 'complete'
   
   // Get current user
   const { data: { user } } = await supabase.auth.getUser()
@@ -35,12 +68,8 @@ export default async function AdminDashboardPage() {
   }
 
   // Check if user has an organization
-  const { data: membership } = await supabase
-    .from('organization_members')
-    .select('org_id, role, organizations(name, subscription_status, trial_ends_at, setup_completed_at)')
-    .eq('user_id', user.id)
-    .in('role', ['owner', 'admin'])
-    .single()
+  // If coming from setup, retry once if membership not found (handles replication lag)
+  const membership = await getMembership(supabase, user.id, isFromSetup)
 
   if (!membership) {
     redirect('/admin/setup')
