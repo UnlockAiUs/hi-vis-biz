@@ -128,6 +128,34 @@ VizDots Terminology:
 
 ---
 
+## DATA TRUTH LAYERS ARCHITECTURE
+
+VizDots uses a three-layer data architecture to ensure data integrity and traceability:
+
+### Layer 1: Facts (Immutable)
+Raw inputs from employees that are **never modified** after creation:
+- `answers` - Raw check-in responses, transcripts, and AI-extracted data
+- Enforced by database trigger `prevent_answer_mutation()` that blocks all UPDATEs
+
+### Layer 2: Derived (Versioned)
+AI-generated interpretations built from facts:
+- `workflows` + `workflow_versions` - Discovered business processes with version history
+- Each change creates a NEW version (never updates existing versions)
+- Versions track: who created them (AI/owner/admin), source dots used, change summary
+
+### Layer 3: Overrides (Phase 2 - Coming)
+Human corrections that layer on top of derived data:
+- `workflow_overrides` - Owner corrections to AI-generated workflows
+- Override layer is separate from derived layer, preserving AI suggestions
+
+### Data Invariants
+1. **Facts never mutate** - Raw dots are immutable historical records
+2. **Derived objects are versioned** - No destructive updates, only new versions
+3. **Every change is audited** - `audit_log` captures all significant modifications
+4. **Overrides are reversible** - Can always "reset to AI suggestion"
+
+---
+
 ## DATABASE SCHEMA
 
 ### Core Tables
@@ -148,6 +176,13 @@ VizDots Terminology:
 | `answers` | Responses + transcripts |
 | `user_topic_history` | Topic tracking |
 | `ai_logs` | AI call logging for debugging |
+
+### Truth Layer Tables (Phase 1)
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `workflows` | Stable workflow identifiers | id, org_id, workflow_key, display_name, department_id, status |
+| `workflow_versions` | Versioned workflow snapshots | id, workflow_id, version_number, created_by_type, created_by_id, source_dot_ids, structure (JSONB) |
+| `audit_log` | Global change tracking | id, org_id, actor_type, actor_id, entity_type, entity_id, action, details (JSONB) |
 
 ### Sessions Table Constraints
 - **Idempotence Constraint (012):** Unique partial index on `(user_id, agent_code, scheduled_for::date)` WHERE `completed_at IS NULL`
@@ -571,7 +606,7 @@ After auth success:
 - [x] `src/app/api/internal/scheduler/route.ts`
 - [x] `src/app/api/internal/reminders/route.ts` - **Phase 10: Check-in reminder emails**
 
-### ✅ SQL Migrations (12 files)
+### ✅ SQL Migrations (14 files)
 - [x] `supabase/migrations/001_initial_schema.sql`
 - [x] `supabase/migrations/002_agents_sessions.sql`
 - [x] `supabase/migrations/003_user_profiles.sql`
@@ -585,6 +620,7 @@ After auth success:
 - [x] `supabase/migrations/011_ai_logs.sql`
 - [x] `supabase/migrations/012_scheduler_idempotence.sql` - **scheduler idempotence constraint**
 - [x] `supabase/migrations/013_email_logs.sql` - **Phase 10: email tracking/idempotence**
+- [x] `supabase/migrations/014_truth_layers.sql` - **Phase 1 Feature Update: workflow versioning, audit_log, fact immutability**
 
 ### ✅ Test Files (5 files)
 - [x] `vitest.config.ts`
@@ -673,3 +709,9 @@ After auth success:
   - Created RUNBOOK.md (ops guide)
   - Created GO_LIVE_CHECKLIST.md
   - ALL 12 PHASES COMPLETE - PRODUCTION READY
+2025-11-28 cline - Started FEATURE_UPDATE_EXECUTION_PLAN Phase 1:
+  - Created supabase/migrations/014_truth_layers.sql
+  - Added workflows + workflow_versions tables for versioned workflows
+  - Added audit_log table for global change tracking
+  - Added fact immutability trigger on answers table
+  - Documented Data Truth Layers architecture in MASTER_PROJECT_CONTEXT.md
